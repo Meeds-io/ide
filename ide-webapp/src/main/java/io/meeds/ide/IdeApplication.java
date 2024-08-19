@@ -19,30 +19,25 @@
 package io.meeds.ide;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import io.meeds.spring.AvailableIntegration;
 import io.meeds.spring.kernel.PortalApplicationContextInitializer;
 
 @SpringBootApplication(scanBasePackages = {
-    "io.meeds.ide",
-    AvailableIntegration.KERNEL_MODULE,
-    AvailableIntegration.WEB_MODULE,
-  }, exclude = {
-    LiquibaseAutoConfiguration.class,
-    DataSourceAutoConfiguration.class,
-    DataSourceTransactionManagerAutoConfiguration.class,
-    HibernateJpaAutoConfiguration.class
+  IdeApplication.MODULE_NAME,
+  AvailableIntegration.KERNEL_MODULE,
+  AvailableIntegration.JPA_MODULE,
+  AvailableIntegration.LIQUIBASE_MODULE,
+  AvailableIntegration.WEB_MODULE,
 })
-@EnableCaching
+@EnableJpaRepositories(basePackages = IdeApplication.MODULE_NAME)
 @PropertySource("classpath:application.properties")
 @PropertySource("classpath:application-common.properties")
 @PropertySource("classpath:ide.properties")
 public class IdeApplication extends PortalApplicationContextInitializer {
+
+  public static final String MODULE_NAME = "io.meeds.ide";
 
 }

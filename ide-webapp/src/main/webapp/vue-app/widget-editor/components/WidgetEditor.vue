@@ -1,14 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
   This file is part of the Meeds project (https://meeds.io/).
 
   Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
   version 3 of the License, or (at your option) any later version.
-
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -19,31 +18,22 @@
   Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 -->
-<gatein-resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://www.exoplatform.org/xml/ns/gatein_resources_1_4 http://www.exoplatform.org/xml/ns/gatein_resources_1_4"
-                  xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_4">
-
-  <module>
-    <name>WidgetEditor</name>
-    <script>
-      <path>/js/widgetEditor.bundle.js</path>
-    </script>
-    <depends>
-      <module>vue</module>
-    </depends>
-    <depends>
-      <module>eXoVueI18n</module>
-    </depends>
-    <depends>
-      <module>commonVueComponents</module>
-    </depends>
-    <depends>
-      <module>extensionRegistry</module>
-    </depends>
-    <depends>
-      <module>vuetify</module>
-    </depends>
-  </module>
-
-</gatein-resources>
-
+<template>
+  <v-app>
+    <main class="application-body">
+      Widget Editor
+      {{ $root.widgetId }}
+      {{ $root.portletInstanceId }}
+    </main>
+  </v-app>
+</template>
+<script>
+export default {
+  data: () => ({
+    widget: null,
+    html: null,
+    js: null,
+    css: null,
+  }),
+};
+</script>
