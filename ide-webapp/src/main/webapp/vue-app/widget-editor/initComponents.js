@@ -17,20 +17,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-const path = require('path');
-const { merge } = require('webpack-merge');
-const webpackCommonConfig = require('./webpack.prod.js');
+import WidgetEditor from './components/WidgetEditor.vue';
 
-// the display name of the war
-const app = 'ide';
+const components = {
+  'widget-editor': WidgetEditor,
+};
 
-const exoServerPath = "/exo-server";
-
-let config = merge(webpackCommonConfig, {
-  output: {
-    path: path.resolve(`${exoServerPath}/webapps/${app}/`)
-  },
-  mode: 'development',
-  devtool: 'eval-source-map'
-});
-module.exports = config;
+for (const key in components) {
+  Vue.component(key, components[key]);
+}

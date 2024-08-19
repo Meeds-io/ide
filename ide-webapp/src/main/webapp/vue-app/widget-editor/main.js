@@ -17,20 +17,34 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-const path = require('path');
-const { merge } = require('webpack-merge');
-const webpackCommonConfig = require('./webpack.prod.js');
+import './initComponents.js';
+import './services.js';
 
-// the display name of the war
-const app = 'ide';
+// get overridden components if exists
+if (extensionRegistry) {
+  const components = extensionRegistry.loadComponents('WidgetEditor');
+  if (components && components.length > 0) {
+    components.forEach(cmp => {
+      Vue.component(cmp.componentName, cmp.componentOptions);
+    });
+  }
+}
 
-const exoServerPath = "/exo-server";
+const lang = eXo?.env.portal.language || 'en';
+const url = `/ide/i18n/locale.portlet.WidgetEditor?lang=${lang}`;
 
-let config = merge(webpackCommonConfig, {
-  output: {
-    path: path.resolve(`${exoServerPath}/webapps/${app}/`)
-  },
-  mode: 'development',
-  devtool: 'eval-source-map'
-});
-module.exports = config;
+const appId = 'WidgetEditor';
+export function init(widgetId, portletInstanceId) {
+  exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n =>
+      Vue.createApp({
+        data: {
+          widgetId,
+          portletInstanceId,
+        },
+        template: `<widget-editor id="${appId}"/>`,
+        vuetify: Vue.prototype.vuetifyOptions,
+        i18n,
+      }, `#${appId}`, 'IDE Widget Editor')
+    );
+}
