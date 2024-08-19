@@ -17,20 +17,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-const path = require('path');
-const { merge } = require('webpack-merge');
-const webpackCommonConfig = require('./webpack.prod.js');
+import * as widgetService from './js/WidgetService.js';
 
-// the display name of the war
-const app = 'ide';
-
-const exoServerPath = "/exo-server";
-
-let config = merge(webpackCommonConfig, {
-  output: {
-    path: path.resolve(`${exoServerPath}/webapps/${app}/`)
-  },
-  mode: 'development',
-  devtool: 'eval-source-map'
-});
-module.exports = config;
+if (!Vue.prototype.$widgetService) {
+  window.Object.defineProperty(Vue.prototype, '$widgetService', {
+    value: widgetService,
+  });
+}
