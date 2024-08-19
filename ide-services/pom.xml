@@ -36,6 +36,10 @@
       <groupId>io.meeds.social</groupId>
       <artifactId>social-component-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.meeds.layout</groupId>
+      <artifactId>layout-service</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <finalName>ide-service</finalName>
