@@ -36,8 +36,19 @@
       <artifactId>ide-service</artifactId>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>io.meeds.social</groupId>
+      <artifactId>social-component-web</artifactId>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
   <build>
     <finalName>ide</finalName>
-  </build>
-</project>
+    <plugins>
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build></project>
