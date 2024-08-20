@@ -19,8 +19,16 @@
 
 import WidgetEditor from './components/WidgetEditor.vue';
 
+import CodeEditor from './components/form/CodeEditor.vue';
+import SaveButton from './components/form/SaveButton.vue';
+
+import CodeViewer from './components/view/CodeViewer.vue';
+
 const components = {
   'widget-editor': WidgetEditor,
+  'widget-code-editor': CodeEditor,
+  'widget-code-viewer': CodeViewer,
+  'widget-editor-save': SaveButton,
 };
 
 for (const key in components) {
