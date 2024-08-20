@@ -20,10 +20,34 @@
 -->
 <template>
   <v-app>
-    <main class="application-body">
-      Widget Editor
-      {{ $root.widgetId }}
-      {{ $root.portletInstanceId }}
+    <main v-if="widget" class="ma-n5">
+      <v-row class="mx-n2 mb-5" no-gutters>
+        <v-col class="mx-2">
+          <widget-code-editor
+            v-model="widget.html"
+            mode="html"
+            widget-icon="fa-code"
+            widget-title="HTML"
+            class="application-body" />
+        </v-col>
+        <v-col class="mx-2">
+          <widget-code-editor
+            v-model="widget.css"
+            mode="css"
+            widget-icon="fa-file-code"
+            widget-title="CSS"
+            class="application-body" />
+        </v-col>
+        <v-col class="mx-2">
+          <widget-code-editor
+            v-model="widget.js"
+            mode="javascript"
+            widget-icon="fa-file-code"
+            widget-title="JS"
+            class="application-body" />
+        </v-col>
+      </v-row>
+      <widget-code-viewer :widget="widget" />
     </main>
   </v-app>
 </template>
@@ -31,9 +55,62 @@
 export default {
   data: () => ({
     widget: null,
-    html: null,
-    js: null,
-    css: null,
+    modified: false,
+    initialized: false,
   }),
+  computed: {
+    html() {
+      return this.widget?.html;
+    },
+    js() {
+      return this.widget?.js;
+    },
+    css() {
+      return this.widget?.css;
+    },
+  },
+  watch: {
+    widget() {
+      window.editingWidget = this.widget;
+    },
+    html() {
+      if (this.initialized) {
+        this.modified = true;
+      }
+    },
+    js() {
+      if (this.initialized) {
+        this.modified = true;
+      }
+    },
+    css() {
+      if (this.initialized) {
+        this.modified = true;
+      }
+    },
+    modified() {
+      if (this.modified) {
+        document.dispatchEvent(new CustomEvent('widget-editor-modified'));
+      }
+    },
+  },
+  created() {
+    document.addEventListener('widget-editor-saved', this.setAsNotModified);
+    this.init();
+  },
+  beforeDestroy() {
+    document.removeEventListener('widget-editor-saved', this.setAsNotModified);
+  },
+  methods: {
+    init() {
+      this.$widgetService.getWidget(this.$root.widgetId)
+        .then(widget => this.widget = widget)
+        .then(() => this.$nextTick())
+        .finally(() => this.initialized = true);
+    },
+    setAsNotModified() {
+      this.modified = false;
+    },
+  },
 };
 </script>
