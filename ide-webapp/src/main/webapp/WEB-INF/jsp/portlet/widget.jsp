@@ -18,9 +18,9 @@
   <div data-app="true"
     class="v-application transparent v-application--is-ltr theme--light"
     id="WidgetPortlet<%=renderRequest.getWindowID()%>">
-    <link id="widgetStyle<%=widgetId%>" href="/ide/rest/widgets/<%=widgetId%>/css?v=<%=widgetLastModified%>"  type="text/css" rel="stylesheet" />
-    <script id="widgetScript<%=widgetId%>" src="/ide/rest/widgets/<%=widgetId%>/js?v=<%=widgetLastModified%>" type="text/javascript" />
-    <div class="application-body">
+    <link href="/ide/rest/widgets/<%=widgetId%>/css?v=<%=widgetLastModified%>"  type="text/css" rel="stylesheet">
+    <script src="/ide/rest/widgets/<%=widgetId%>/js?v=<%=widgetLastModified%>" type="text/javascript"></script>
+    <div class="application-body full-width">
       <%= widget.getHtml() %>
     </div>
   </div>
