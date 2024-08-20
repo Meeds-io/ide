@@ -122,7 +122,7 @@ public class WidgetRest {
       return ResponseEntity.ok()
                            .cacheControl(CACHE_CONTROL)
                            .contentType(MediaType.parseMediaType("text/css"))
-                           .body(widget.getHtml());
+                           .body(widget.getCss());
     } catch (ObjectNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
     }
@@ -147,7 +147,7 @@ public class WidgetRest {
       return ResponseEntity.ok()
                            .cacheControl(CACHE_CONTROL)
                            .contentType(MediaType.parseMediaType("text/javascript"))
-                           .body(widget.getHtml());
+                           .body(widget.getJs());
     } catch (ObjectNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
     }
