@@ -42,6 +42,8 @@ export function init(widgetId, portletInstanceId) {
         data: {
           widgetId,
           portletInstanceId,
+          viewerUpToDate: false,
+          isPortletEditor: eXo.env.portal.selectedNodeUri === 'portlet-editor',
         },
         template: `<widget-editor id="${appId}"/>`,
         vuetify: Vue.prototype.vuetifyOptions,
