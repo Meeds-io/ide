@@ -16,36 +16,18 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.ide.storage;
+package io.meeds.ide.dao;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import io.meeds.ide.dao.WidgetDAO;
 import io.meeds.ide.entity.WidgetEntity;
-import io.meeds.ide.model.Widget;
-import io.meeds.ide.utils.Utils;
 
-@Component
-public class WidgetStorage {
+@Repository
+public interface WidgetDAO extends JpaRepository<WidgetEntity, Long> {
 
-  @Autowired
-  private WidgetDAO widgetDAO;
+  boolean existsByPortletId(Long id);
 
-  public Widget getWidget(Long id) {
-    return widgetDAO.findById(id)
-                    .map(Utils::fromEntity)
-                    .orElse(null);
-  }
-
-  public boolean existsByPortletInstanceId(Long portletInstanceId) {
-    return widgetDAO.existsByPortletId(portletInstanceId);
-  }
-
-  public Widget saveWidget(Widget widget) {
-    WidgetEntity widgetEntity = Utils.toEntity(widget);
-    widgetEntity = widgetDAO.save(widgetEntity);
-    return Utils.fromEntity(widgetEntity);
-  }
+  WidgetEntity findByPortletId(long portletInstanceId);
 
 }

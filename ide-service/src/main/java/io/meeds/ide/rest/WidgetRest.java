@@ -28,14 +28,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 
 import io.meeds.ide.model.Widget;
@@ -59,7 +57,6 @@ public class WidgetRest {
   private WidgetService             widgetService;
 
   @GetMapping("{id}")
-  @Secured("users")
   @Operation(summary = "Retrieve a Web application widget",
              method = "GET",
              description = "This will retrieve a page template designated by its id")
@@ -79,7 +76,6 @@ public class WidgetRest {
   }
 
   @GetMapping("{id}/html")
-  @Secured("users")
   @Operation(summary = "Retrieve a Web application widget html",
              method = "GET",
              description = "Retrieve a Web application widget html")
@@ -104,7 +100,6 @@ public class WidgetRest {
   }
 
   @GetMapping("{id}/css")
-  @Secured("users")
   @Operation(summary = "Retrieve a Web application widget css",
              method = "GET",
              description = "Retrieve a Web application widget css")
@@ -129,7 +124,6 @@ public class WidgetRest {
   }
 
   @GetMapping("{id}/js")
-  @Secured("users")
   @Operation(summary = "Retrieve a Web application widget javascript",
              method = "GET",
              description = "Retrieve a Web application widget javascript")
@@ -150,29 +144,6 @@ public class WidgetRest {
                            .body(widget.getJs());
     } catch (ObjectNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-    }
-  }
-
-  @PostMapping
-  @Secured("administrators")
-  @Operation(summary = "Create a Web application widget",
-             method = "POST",
-             description = "Create a Web application widget")
-  @ApiResponses(value = {
-                          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "403", description = "Forbidden"),
-                          @ApiResponse(responseCode = "409", description = "Widget already exists"),
-  })
-  public Widget createWidget(
-                             HttpServletRequest request,
-                             @RequestBody
-                             Widget widget) {
-    try {
-      return widgetService.createWidget(widget, request.getRemoteUser());
-    } catch (ObjectAlreadyExistsException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    } catch (IllegalAccessException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
     }
   }
 
