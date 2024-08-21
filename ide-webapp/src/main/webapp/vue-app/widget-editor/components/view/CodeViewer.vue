@@ -20,7 +20,7 @@
         {{ $t('codeEditor.run') }}
       </v-btn>
       <widget-editor-save
-        v-if="!isPortletEditor"
+        v-if="!$root.isPortletEditor"
         class="ms-2" />
     </div>
     <div
@@ -42,7 +42,7 @@
         {{ $t('codeEditor.run') }}
       </v-btn>
       <widget-editor-save
-        v-if="!isPortletEditor"
+        v-if="!$root.isPortletEditor"
         class="ms-2" />
     </div>
     <v-card
@@ -52,6 +52,7 @@
       flat>
       <div
         ref="code"
+        id="codeViewer"
         v-show="codeExecuted"></div>
     </v-card>
   </v-card>
@@ -68,7 +69,6 @@ export default {
     codeExecuted: false,
     modified: true,
     mobileDisplayMode: false,
-    isPortletEditor: eXo.env.portal.selectedNodeUri === 'portlet-editor',
   }),
   computed: {
     html() {
@@ -79,6 +79,9 @@ export default {
     },
     css() {
       return this.widget?.css;
+    },
+    viewerUpToDate() {
+      return !this.modified && this.codeExecuted;
     },
   },
   watch: {
@@ -93,6 +96,9 @@ export default {
     },
     modified() {
       this.$root.$emit('close-alert-message');
+    },
+    viewerUpToDate() {
+      this.$root.viewerUpToDate = this.viewerUpToDate;
     },
   },
   methods: {

@@ -56,6 +56,14 @@ export default {
       this.loading = true;
       try {
         await this.$widgetService.updateWidget(window.editingWidget);
+        if (this.$root.isPortletEditor) {
+          const instance = await this.$portletInstanceService.getPortletInstance(this.$root.portletInstanceId);
+          instance.preferences = await this.$portletInstanceService.getPortletInstancePreferences(this.$root.portletInstanceId);
+  
+          await this.$portletInstanceService.updatePortletInstance(instance);
+          await this.savePreview();
+        }
+
         this.modified = false;
         this.$root.$emit('alert-message', this.$t('codeEditor.savedSuccessfully'), 'success');
         document.dispatchEvent(new CustomEvent('widget-editor-saved', {detail: window.editingWidget}));
@@ -65,6 +73,42 @@ export default {
       } finally {
         window.setTimeout(() => this.loading = false, 50);
       }
+    },
+    async savePreview() {
+      const codeViewerElement = document.querySelector('#codeViewer');
+      if (!codeViewerElement?.innerHTML || !this.$root.viewerUpToDate) {
+        return;
+      }
+      const previewCanvas = await window.html2canvas(codeViewerElement);
+      const previewImage = previewCanvas.toDataURL('image/png');
+      const previewBlob = this.convertPreviewToFile(previewImage);
+      const uploadId =  await this.$uploadService.upload(previewBlob);
+      await new Promise((resolve, reject) => {
+        const interval = window.setInterval(() => {
+          this.$uploadService.getUploadProgress(uploadId)
+            .then(percent => {
+              if (Number(percent) === 100) {
+                window.clearInterval(interval);
+                resolve();
+              }
+            })
+            .catch(e => reject(e));
+        }, 200);
+      });
+      return await this.$fileAttachmentService.saveAttachments({
+        objectType: 'portletInstance',
+        objectId: this.$root.portletInstanceId,
+        uploadedFiles: [{uploadId}],
+        attachedFiles: [],
+      });
+    },
+    convertPreviewToFile(previewImage) {
+      const imgString = window.atob(previewImage.replace(/^data:image\/\w+;base64,/, ''));
+      const bytes = new Uint8Array(imgString.length);
+      for (let i = 0; i < imgString.length; i++) {
+        bytes[i] = imgString.charCodeAt(i);
+      }
+      return new Blob([bytes], {type: 'image/png'});
     },
   },
 };
