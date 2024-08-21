@@ -30,23 +30,6 @@ export function getWidget(id) {
   });
 }
 
-export function createWidget(widget) {
-  return fetch('/ide/rest/widgets', {
-    credentials: 'include',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(widget),
-  }).then((resp) => {
-    if (resp?.ok) {
-      return resp.json();
-    } else {
-      throw new Error('Error when creating widget');
-    }
-  });
-}
-
 export function updateWidget(widget) {
   return fetch(`/ide/rest/widgets/${widget.id}`, {
     credentials: 'include',

@@ -21,7 +21,7 @@
     <link href="/ide/rest/widgets/<%=widgetId%>/css?v=<%=widgetLastModified%>"  type="text/css" rel="stylesheet">
     <script src="/ide/rest/widgets/<%=widgetId%>/js?v=<%=widgetLastModified%>" type="text/javascript"></script>
     <div class="application-body full-width">
-      <%= widget.getHtml() %>
+      <%= widget.getHtml() == null ? "" : widget.getHtml() %>
     </div>
   </div>
 </div>

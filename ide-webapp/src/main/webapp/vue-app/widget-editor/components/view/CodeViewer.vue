@@ -53,7 +53,8 @@
       <div
         ref="code"
         id="codeViewer"
-        v-show="codeExecuted"></div>
+        v-show="codeExecuted"
+        :data-up-to-date="viewerUpToDate"></div>
     </v-card>
   </v-card>
 </template>
