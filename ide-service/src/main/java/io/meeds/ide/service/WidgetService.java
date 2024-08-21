@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
 
@@ -35,14 +36,21 @@ import io.meeds.layout.service.LayoutAclService;
 @Service
 public class WidgetService {
 
-  @Autowired
-  private LayoutAclService layoutAclService;
+  public static final String IDE_WIDGET_CREATED_EVENT = "ide.widget.created";
+
+  public static final String IDE_WIDGET_UPDATED_EVENT = "ide.widget.updated";
 
   @Autowired
-  private IdentityManager  identityManager;
+  private LayoutAclService   layoutAclService;
 
   @Autowired
-  private WidgetStorage    widgetStorage;
+  private IdentityManager    identityManager;
+
+  @Autowired
+  private ListenerService    listenerService;
+
+  @Autowired
+  private WidgetStorage      widgetStorage;
 
   public Widget getWidget(long id) throws ObjectNotFoundException {
     Widget widget = widgetStorage.getWidget(id);
@@ -56,6 +64,9 @@ public class WidgetService {
     if (!layoutAclService.isAdministrator(username)) {
       throw new IllegalAccessException("User isn't an administrator");
     }
+    if (widget.getPortletId() == null || widget.getPortletId() == 0) {
+      throw new IllegalArgumentException("Widget portlet instance id is mandatory");
+    }
     if (widgetStorage.existsByPortletInstanceId(widget.getPortletId())) {
       throw new ObjectAlreadyExistsException(String.format("Widget for portlet with id %s already exists",
                                                            widget.getPortletId()));
@@ -65,20 +76,28 @@ public class WidgetService {
     widget.setModifierId(Long.parseLong(identity.getId()));
     widget.setCreatedDate(LocalDateTime.now());
     widget.setModifiedDate(LocalDateTime.now());
-    return widgetStorage.saveWidget(widget);
+    Widget createdWidget = widgetStorage.saveWidget(widget);
+    listenerService.broadcast(IDE_WIDGET_CREATED_EVENT, null, createdWidget);
+    return createdWidget;
   }
 
   public Widget updateWidget(Widget widget, String username) throws ObjectNotFoundException, IllegalAccessException {
     if (!layoutAclService.isAdministrator(username)) {
       throw new IllegalAccessException("User isn't an administrator");
     }
-    if (widgetStorage.getWidget(widget.getId()) == null) {
+    Widget existingWidget = widgetStorage.getWidget(widget.getId());
+    if (existingWidget == null) {
       throw new ObjectNotFoundException(String.format("Widget with id %s doesn't exists", widget.getId()));
     }
     Identity identity = identityManager.getOrCreateUserIdentity(username);
-    widget.setModifierId(Long.parseLong(identity.getId()));
-    widget.setModifiedDate(LocalDateTime.now());
-    return widgetStorage.saveWidget(widget);
+    existingWidget.setHtml(widget.getHtml());
+    existingWidget.setCss(widget.getCss());
+    existingWidget.setJs(widget.getJs());
+    existingWidget.setModifierId(Long.parseLong(identity.getId()));
+    existingWidget.setModifiedDate(LocalDateTime.now());
+    Widget updatedWidget = widgetStorage.saveWidget(existingWidget);
+    listenerService.broadcast(IDE_WIDGET_UPDATED_EVENT, null, updatedWidget);
+    return updatedWidget;
   }
 
 }

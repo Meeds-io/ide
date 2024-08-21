@@ -36,7 +36,7 @@
   <name>Meeds - IDE - Parent POM</name>
   <description>IDE addon for Meeds based Web Application</description>
   <modules>
-    <module>ide-services</module>
+    <module>ide-service</module>
     <module>ide-webapp</module>
     <module>ide-packaging</module>
   </modules>

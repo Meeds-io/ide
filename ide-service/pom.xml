@@ -31,6 +31,13 @@
   <artifactId>ide-service</artifactId>
   <packaging>jar</packaging>
   <name>Meeds:: IDE - Service</name>
+  <properties>
+    <rest.api.doc.title>Widget IDE Rest APIs</rest.api.doc.title>
+    <rest.api.doc.version>1.0</rest.api.doc.version>
+    <rest.api.doc.description>Widget IDE endpoints</rest.api.doc.description>
+
+    <exo.test.coverage.ratio>0.99</exo.test.coverage.ratio>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>io.meeds.social</groupId>
@@ -39,6 +46,18 @@
     <dependency>
       <groupId>io.meeds.layout</groupId>
       <artifactId>layout-service</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.vaadin.external.google</groupId>
+          <artifactId>android-json</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   <build>

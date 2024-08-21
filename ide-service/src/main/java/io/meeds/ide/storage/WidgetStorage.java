@@ -19,6 +19,8 @@
 package io.meeds.ide.storage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import io.meeds.ide.dao.WidgetDAO;
@@ -29,9 +31,12 @@ import io.meeds.ide.utils.Utils;
 @Component
 public class WidgetStorage {
 
-  @Autowired
-  private WidgetDAO widgetDAO;
+  private static final String CACHE_NAME = "ide.widget";
 
+  @Autowired
+  private WidgetDAO           widgetDAO;
+
+  @Cacheable(CACHE_NAME)
   public Widget getWidget(Long id) {
     return widgetDAO.findById(id)
                     .map(Utils::fromEntity)
@@ -42,6 +47,7 @@ public class WidgetStorage {
     return widgetDAO.existsByPortletId(portletInstanceId);
   }
 
+  @CacheEvict(value = CACHE_NAME, key = "#widget.getId()")
   public Widget saveWidget(Widget widget) {
     WidgetEntity widgetEntity = Utils.toEntity(widget);
     widgetEntity = widgetDAO.save(widgetEntity);
