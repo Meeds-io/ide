@@ -79,13 +79,16 @@ public class WidgetPortlet extends CMSPortlet {
     PortletPreferences preferences = request.getPreferences();
     if (preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null) != null
         && preferences.getValue(WIDGET_ID_PARAM, null) == null) {
-      Widget widget = new Widget();
       long portletInstanceId = Long.parseLong(preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null));
-      widget.setPortletId(portletInstanceId);
       Identity identity = Utils.getViewerIdentity();
       try {
-        widget = ExoContainerContext.getService(WidgetService.class)
-                                    .createWidget(widget, identity.getRemoteId());
+        WidgetService widgetService = ExoContainerContext.getService(WidgetService.class);
+        Widget widget = widgetService.getWidgetByPortletId(portletInstanceId);
+        if (widget == null) {
+          widget = new Widget();
+          widget.setPortletId(portletInstanceId);
+          widget = widgetService.createWidget(widget, identity.getRemoteId());
+        }
         preferences.setValue(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
         savePreference(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
       } catch (IllegalAccessException e) {

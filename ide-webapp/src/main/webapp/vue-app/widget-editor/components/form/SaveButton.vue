@@ -35,6 +35,7 @@ export default {
   data: () => ({
     loading: false,
     modified: false,
+    isPortletEditor: eXo.env.portal.selectedNodeUri === 'portlet-editor',
   }),
   created() {
     document.addEventListener('keydown', this.saveWithShortcut);
@@ -56,7 +57,7 @@ export default {
       this.loading = true;
       try {
         await this.$widgetService.updateWidget(window.editingWidget);
-        if (this.$root.isPortletEditor) {
+        if (this.isPortletEditor) {
           const instance = await this.$portletInstanceService.getPortletInstance(this.$root.portletInstanceId);
           instance.preferences = await this.$portletInstanceService.getPortletInstancePreferences(this.$root.portletInstanceId);
   
@@ -76,7 +77,8 @@ export default {
     },
     async savePreview() {
       const codeViewerElement = document.querySelector('#codeViewer');
-      if (!codeViewerElement?.innerHTML || !this.$root.viewerUpToDate) {
+      if (!codeViewerElement?.innerHTML
+          || codeViewerElement.getAttribute('data-up-to-date') !== 'true') {
         return;
       }
       const previewCanvas = await window.html2canvas(codeViewerElement);
