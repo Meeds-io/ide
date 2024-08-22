@@ -23,5 +23,27 @@
                   xsi:schemaLocation="http://www.exoplatform.org/xml/ns/gatein_resources_1_4 http://www.exoplatform.org/xml/ns/gatein_resources_1_4"
                   xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_4">
 
+  <module>
+    <name>WidgetEditor</name>
+    <script>
+      <path>/js/widgetEditor.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+  </module>
+
 </gatein-resources>
 
