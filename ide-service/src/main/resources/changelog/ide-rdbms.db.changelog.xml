@@ -33,6 +33,7 @@
   </changeSet>
 
   <changeSet author="ide" id="1.0.0-1">
+    <validCheckSum>ANY</validCheckSum>
     <createTable tableName="IDE_WIDGETS">
       <column name="ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_IDE_WIDGETS"/>
@@ -47,7 +48,7 @@
       <column name="CREATED_DATE" type="TIMESTAMP"/>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci"/>
     </modifySql>
   </changeSet>
 
@@ -56,6 +57,12 @@
         ALTER TABLE IDE_WIDGETS MODIFY COLUMN HTML LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         ALTER TABLE IDE_WIDGETS MODIFY COLUMN CSS LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         ALTER TABLE IDE_WIDGETS MODIFY COLUMN JS LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    </sql>
+  </changeSet>
+
+  <changeSet author="ide" id="1.0.0-3" >
+    <sql dbms="mysql">
+      ALTER TABLE IDE_WIDGETS CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
     </sql>
   </changeSet>
 
