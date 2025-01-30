@@ -30,7 +30,7 @@
       <span>{{ drawerTitle }}</span>
     </template>
     <template v-if="drawer" #content>
-      <v-card class="ma-4 elevation-0">
+      <v-card height="calc(100% - 32px)" class="ma-4 elevation-0">
         <div class="text-header pt-4">
           {{ $t('siteManagement.staticResource.label.name') }}
         </div>
@@ -71,7 +71,8 @@
           v-model="content"
           :mode="resourceType === 'js' ? 'javascript' : resourceType"
           :expanded="false"
-          standalone
+          :min-height="editorHeight"
+          :multiple="false"
           class="application-body" />
       </v-card>
     </template>
@@ -137,6 +138,9 @@ export default {
     },
     resourceChanged() {
       return this.resourceContent !== this.content || this.resourceName !== this.StaticResourceName || this.customizePosition && (this.resourcePosition !== this.position) || !!this.resourcePosition !== this.customizePosition;
+    },
+    editorHeight() {
+      return `calc(100% - ${this.customizePosition ? '332' : '200'}px)`;
     }
   },
   created() {
