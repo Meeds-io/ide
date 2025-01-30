@@ -2,7 +2,7 @@
   <v-card
     ref="parent"
     min-width="300px"
-    min-height="302px"
+    :min-height="standalone ? '500px' : '302px'"
     class="d-flex flex-column"
     flat>
     <div
@@ -10,12 +10,14 @@
       :class="{
         'position-absolute t-0 b-0 r-0 l-0 z-index-modal white': expand,
         'flex-grow-1': !expand,
+        'pa-4': !standalone
       }"
-      class="d-flex flex-column pa-4 border-box-sizing">
+      class="d-flex flex-column border-box-sizing">
       <div class="d-flex align-center mb-2">
         <v-icon size="20">{{ widgetIcon }}</v-icon>
         <span class="ms-4">{{ widgetTitle }}</span>
         <v-btn
+          v-if="expanded"
           :title="$t('codeEditor.expandTooltip')"
           class="ms-auto"
           icon
@@ -52,6 +54,14 @@ export default {
       type: String,
       default: null,
     },
+    expanded: {
+      type: Boolean,
+      default: true
+    },
+    standalone: {
+      type: Boolean,
+      default: false
+    }
   },
   data: () => ({
     editor: null,

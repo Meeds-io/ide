@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  * 
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,61 +17,22 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-export function getWidget(id) {
-  return fetch(`/ide/rest/widgets/${id}`, {
-    method: 'GET',
-    credentials: 'include',
-  }).then(resp => {
-    if (!resp?.ok) {
-      throw new Error('Error when retrieving widget by id');
-    } else {
-      return resp.json();
-    }
-  });
-}
-
-export function updateWidget(widget) {
-  return fetch(`/ide/rest/widgets/${widget.id}`, {
-    credentials: 'include',
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(widget),
-  }).then((resp) => {
-    if (!resp?.ok) {
-      throw new Error('Error when updating widget');
-    }
-  });
-}
-
-export function createWidget(widget) {
-  return fetch('/ide/rest/widgets', {
+export function createStaticResourceApplication(resourceApplication) {
+  return fetch('/ide/rest/static/resources', {
     credentials: 'include',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(widget),
+    body: JSON.stringify(resourceApplication),
   }).then((resp) => {
     if (!resp?.ok) {
-      throw new Error('Error when creating widget');
+      throw new Error('Error when creating static resource application');
     }
   });
 }
 
-export function deleteWidget(widgetId) {
-  return fetch(`/ide/rest/widgets/${widgetId}`, {
-    credentials: 'include',
-    method: 'DELETE'
-  }).then((resp) => {
-    if (!resp?.ok) {
-      throw new Error('Error when deleting widget');
-    }
-  });
-}
-
-export function getStaticWidget(paramsObj) {
+export function getStaticResourceApplications(paramsObj) {
   const formData = new FormData();
   if (paramsObj) {
     Object.keys(paramsObj).forEach(key => {
@@ -84,7 +45,7 @@ export function getStaticWidget(paramsObj) {
     });
   }
   const params = new URLSearchParams(formData).toString();
-  return fetch(`/ide/rest/widgets/static?${params}`, {
+  return fetch(`/ide/rest/static/resources?${params}`, {
     credentials: 'include',
     method: 'GET',
   }).then((resp) => {
