@@ -19,14 +19,10 @@
 package io.meeds.ide.entity;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import io.meeds.ide.constant.WidgetType;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -42,30 +38,40 @@ public class WidgetEntity {
   @SequenceGenerator(name = "SEQ_IDE_WIDGET_ID", sequenceName = "SEQ_IDE_WIDGET_ID", allocationSize = 1)
   @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_IDE_WIDGET_ID")
   @Column(name = "ID")
-  protected Long          id;
+  protected Long              id;
 
   @Column(name = "PORTLET_ID")
-  protected Long          portletId;
+  protected Long              portletId;
 
   @Column(name = "HTML")
-  private String          html;
+  private String              html;
 
   @Column(name = "CSS")
-  private String          css;
+  private String              css;
 
   @Column(name = "JS")
-  private String          js;
+  private String              js;
 
   @Column(name = "CREATOR_ID")
-  protected Long          creatorId;
+  protected Long              creatorId;
 
   @Column(name = "MODIFIER_ID")
-  protected Long          modifierId;
+  protected Long              modifierId;
 
   @Column(name = "MODIFIED_DATE")
-  protected LocalDateTime modifiedDate;
+  protected LocalDateTime     modifiedDate;
 
   @Column(name = "CREATED_DATE")
-  protected LocalDateTime createdDate;
+  protected LocalDateTime     createdDate;
+
+  @Enumerated(EnumType.ORDINAL)
+  @Column(name = "TYPE", nullable = false)
+  protected WidgetType        type;
+
+  @ElementCollection(fetch = FetchType.EAGER)
+  @MapKeyColumn(name = "NAME")
+  @Column(name = "VALUE")
+  @CollectionTable(name = "IDE_WIDGETS_SETTINGS", joinColumns = { @JoinColumn(name = "ID") })
+  private Map<String, String> properties;
 
 }

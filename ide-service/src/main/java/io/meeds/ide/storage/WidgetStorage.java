@@ -18,6 +18,8 @@
  */
 package io.meeds.ide.storage;
 
+import io.meeds.ide.dao.query.WidgetQueryBuilder;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -27,6 +29,9 @@ import io.meeds.ide.dao.WidgetDAO;
 import io.meeds.ide.entity.WidgetEntity;
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.utils.Utils;
+
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class WidgetStorage {
@@ -43,6 +48,7 @@ public class WidgetStorage {
                     .orElse(null);
   }
 
+  @CacheEvict(value = CACHE_NAME, allEntries = true)
   public Widget createWidget(Widget widget) {
     widget.setId(null);
     WidgetEntity widgetEntity = Utils.toEntity(widget);
@@ -50,11 +56,24 @@ public class WidgetStorage {
     return Utils.fromEntity(widgetEntity);
   }
 
-  @CacheEvict(value = CACHE_NAME, key = "#p0.id")
+  @CacheEvict(value = CACHE_NAME, allEntries = true)
   public Widget updateWidget(Widget widget) {
     WidgetEntity widgetEntity = Utils.toEntity(widget);
     widgetEntity = widgetDAO.save(widgetEntity);
     return Utils.fromEntity(widgetEntity);
+  }
+
+  @CacheEvict(value = CACHE_NAME, allEntries = true)
+  public void deleteWidgetById(long widgetId) throws ObjectNotFoundException {
+    if (!widgetDAO.existsById(widgetId)) {
+      throw new ObjectNotFoundException(String.format("Widget with id %s doesn't exist", widgetId));
+    }
+    widgetDAO.deleteById(widgetId);
+  }
+
+  @Cacheable(value = CACHE_NAME)
+  public List<Widget> getWidgetsByProperties(Map<String, String> properties) {
+    return widgetDAO.findAll(WidgetQueryBuilder.hasProperties(properties)).stream().map(Utils::fromEntity).toList();
   }
 
   public Widget getWidgetByPortletId(long portletInstanceId) {
