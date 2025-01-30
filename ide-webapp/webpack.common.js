@@ -24,6 +24,7 @@ const { VueLoaderPlugin } = require('vue-loader')
 const config = {
   entry: {
     widgetEditor: './src/main/webapp/vue-app/widget-editor/main.js',
+    staticApplicationSiteManagementExtension: './src/main/webapp/vue-app/site-management-extension/main.js',
   },
   context: path.resolve(__dirname, '.'),
   module: {

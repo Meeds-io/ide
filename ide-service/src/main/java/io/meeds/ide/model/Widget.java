@@ -19,7 +19,9 @@
 package io.meeds.ide.model;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
+import io.meeds.ide.constant.WidgetType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,25 +31,29 @@ import lombok.NoArgsConstructor;
 @Data
 public class Widget {
 
-  protected Long          id;
+  protected Long              id;
 
   /**
    * Portlet instance identifier
    */
-  protected Long          portletId;
+  protected Long              portletId;
 
-  private String          html;
+  private String              html;
 
-  private String          css;
+  private String              css;
 
-  private String          js;
+  private String              js;
 
-  protected Long          creatorId;
+  protected Long              creatorId;
 
-  protected Long          modifierId;
+  protected Long              modifierId;
 
-  protected LocalDateTime modifiedDate;
+  protected LocalDateTime     modifiedDate;
 
-  protected LocalDateTime createdDate;
+  protected LocalDateTime     createdDate;
+
+  protected WidgetType        type;
+
+  private Map<String, String> properties;
 
 }
