@@ -45,5 +45,25 @@
     </depends>
   </module>
 
+  <module>
+    <name>StaticApplicationSiteManagementExtension</name>
+    <load-group>SiteManagementGRP</load-group>
+    <script>
+      <path>/js/staticApplicationSiteManagementExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+  </module>
+
 </gatein-resources>
 

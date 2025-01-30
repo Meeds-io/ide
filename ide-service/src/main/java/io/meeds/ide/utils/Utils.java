@@ -36,7 +36,9 @@ public class Utils {
                       w.getCreatorId(),
                       w.getModifierId(),
                       w.getModifiedDate(),
-                      w.getCreatedDate());
+                      w.getCreatedDate(),
+                      w.getType(),
+                      w.getProperties());
   }
 
   public static WidgetEntity toEntity(Widget widget) {
@@ -48,7 +50,9 @@ public class Utils {
                             widget.getCreatorId(),
                             widget.getModifierId(),
                             widget.getModifiedDate(),
-                            widget.getCreatedDate());
+                            widget.getCreatedDate(),
+                            widget.getType(),
+                            widget.getProperties());
   }
 
 }
