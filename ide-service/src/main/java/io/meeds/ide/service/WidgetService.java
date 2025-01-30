@@ -40,6 +40,8 @@ public class WidgetService {
 
   public static final String IDE_WIDGET_UPDATED_EVENT = "ide.widget.updated";
 
+  public static final String NOT_ADMINISTRATOR_USER   = "User isn't an administrator";
+
   @Autowired
   private LayoutAclService   layoutAclService;
 
@@ -66,7 +68,7 @@ public class WidgetService {
 
   public Widget createWidget(Widget widget, String username) throws ObjectAlreadyExistsException, IllegalAccessException {
     if (!layoutAclService.isAdministrator(username)) {
-      throw new IllegalAccessException("User isn't an administrator");
+      throw new IllegalAccessException(NOT_ADMINISTRATOR_USER);
     }
     if (widget.getPortletId() == null || widget.getPortletId() == 0) {
       throw new IllegalArgumentException("Widget portlet instance id is mandatory");
@@ -87,7 +89,7 @@ public class WidgetService {
 
   public Widget updateWidget(Widget widget, String username) throws ObjectNotFoundException, IllegalAccessException {
     if (!layoutAclService.isAdministrator(username)) {
-      throw new IllegalAccessException("User isn't an administrator");
+      throw new IllegalAccessException(NOT_ADMINISTRATOR_USER);
     }
     Widget existingWidget = widgetStorage.getWidget(widget.getId());
     if (existingWidget == null) {
@@ -97,11 +99,19 @@ public class WidgetService {
     existingWidget.setHtml(widget.getHtml());
     existingWidget.setCss(widget.getCss());
     existingWidget.setJs(widget.getJs());
+    existingWidget.setProperties(widget.getProperties());
     existingWidget.setModifierId(Long.parseLong(identity.getId()));
     existingWidget.setModifiedDate(LocalDateTime.now());
     Widget updatedWidget = widgetStorage.updateWidget(existingWidget);
     listenerService.broadcast(IDE_WIDGET_UPDATED_EVENT, null, updatedWidget);
     return updatedWidget;
+  }
+
+  public void deleteWidget(long widgetId, String username) throws ObjectNotFoundException, IllegalAccessException {
+    if (!layoutAclService.isAdministrator(username)) {
+      throw new IllegalAccessException(NOT_ADMINISTRATOR_USER);
+    }
+    widgetStorage.deleteWidgetById(widgetId);
   }
 
 }

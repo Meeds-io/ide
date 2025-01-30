@@ -18,19 +18,20 @@
  */
 package io.meeds.ide.storage;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import io.meeds.ide.dao.WidgetDAO;
 import io.meeds.ide.entity.WidgetEntity;
 import io.meeds.ide.model.Widget;
+import org.springframework.data.jpa.domain.Specification;
 
 @SpringBootTest(classes = {
                             WidgetStorage.class,
@@ -146,4 +148,34 @@ public class WidgetStorageTest {
     assertEquals(MODIFIED_DATE, updatedWidget.getModifiedDate());
   }
 
+  @Test
+  void deletePageTemplate() throws ObjectNotFoundException {
+    assertThrows(ObjectNotFoundException.class, () -> widgetStorage.deleteWidgetById(7L));
+    when(widgetDAO.existsById(7L)).thenReturn(true);
+    widgetStorage.deleteWidgetById(7L);
+    verify(widgetDAO, times(1)).deleteById(7L);
+  }
+
+  @Test
+  void getWidgetByPortletId() {
+    widgetStorage.getWidgetByPortletId(1L);
+    verify(widgetDAO, times(1)).findByPortletId(1L);
+  }
+
+  @Test
+  void getWidgetsByProperties() {
+    // Given
+    Map<String, String> properties = new HashMap<>();
+    properties.put("key1", "value1");
+
+    // When
+    widgetStorage.getWidgetsByProperties(properties);
+
+    // Then
+    ArgumentCaptor<Specification<WidgetEntity>> specCaptor = ArgumentCaptor.forClass(Specification.class);
+    verify(widgetDAO, times(1)).findAll(specCaptor.capture());
+
+    Specification<WidgetEntity> capturedSpec = specCaptor.getValue();
+    assertNotNull(capturedSpec, "The specification should not be null");
+  }
 }
