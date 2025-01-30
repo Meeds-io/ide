@@ -2,7 +2,7 @@
   <v-card
     ref="parent"
     min-width="300px"
-    :min-height="standalone ? '500px' : '302px'"
+    :min-height="minHeight"
     class="d-flex flex-column"
     flat>
     <div
@@ -10,7 +10,7 @@
       :class="{
         'position-absolute t-0 b-0 r-0 l-0 z-index-modal white': expand,
         'flex-grow-1': !expand,
-        'pa-4': !standalone
+        'pa-4': multiple
       }"
       class="d-flex flex-column border-box-sizing">
       <div class="d-flex align-center mb-2">
@@ -58,9 +58,13 @@ export default {
       type: Boolean,
       default: true
     },
-    standalone: {
+    multiple: {
       type: Boolean,
-      default: false
+      default: true
+    },
+    minHeight: {
+      type: String,
+      default: '302px'
     }
   },
   data: () => ({
