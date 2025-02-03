@@ -25,12 +25,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
 
+import io.meeds.social.navigation.constant.SidebarItemType;
+import io.meeds.social.navigation.model.NavigationConfiguration;
+import io.meeds.social.navigation.model.SidebarConfiguration;
+import io.meeds.social.navigation.model.SidebarItem;
+import io.meeds.social.navigation.service.NavigationConfigurationService;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.TransientApplicationState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,41 +51,41 @@ import io.meeds.ide.model.Widget;
 import io.meeds.ide.storage.WidgetStorage;
 import io.meeds.layout.service.LayoutAclService;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @SpringBootTest(classes = { StaticResourceService.class, })
 @ExtendWith(MockitoExtension.class)
 class StaticResourceServiceTest {
 
-  private static final String     USERNAME  = "testUser";
+  private static final MockedStatic<CommonsUtils> COMMONS_UTILS_UTIL = mockStatic(CommonsUtils.class);
 
-  private static final String     SITE_NAME = "siteName";
+  private static final String            USERNAME  = "testUser";
 
-  @MockBean
-  private LayoutAclService        layoutAclService;
-
-  @MockBean
-  private IdentityManager         identityManager;
+  private static final String            SITE_NAME = "siteName";
 
   @MockBean
-  private ListenerService         listenerService;
+  private LayoutAclService               layoutAclService;
 
   @MockBean
-  private WidgetStorage           widgetStorage;
+  private IdentityManager                identityManager;
 
   @MockBean
-  private UserPortalConfigService userPortalConfigService;
+  private ListenerService                listenerService;
+
+  @MockBean
+  private WidgetStorage                  widgetStorage;
+
+  @MockBean
+  private UserPortalConfigService        userPortalConfigService;
 
   @Autowired
-  private StaticResourceService   staticResourceService;
+  private StaticResourceService          staticResourceService;
 
   @Mock
-  private Widget                  widget;
+  private Widget                         widget;
 
   @Mock
-  private Identity                identity;
+  private Identity                       identity;
 
   @Test
   void getStaticResources() throws IllegalAccessException {
@@ -117,6 +124,19 @@ class StaticResourceServiceTest {
     filters.put(POSITION, "END_OF_BODY");
     filters.put(ENABLED, "true");
 
+    NavigationConfigurationService navigationConfigurationService = mock(NavigationConfigurationService.class);
+    NavigationConfiguration navigationConfiguration = mock(NavigationConfiguration.class);
+    SidebarConfiguration sidebarConfiguration = mock(SidebarConfiguration.class);
+    List<SidebarItem> sidebarItems = new ArrayList<>();
+    SidebarItem sidebarItem1 = new SidebarItem();
+    sidebarItem1.setType(SidebarItemType.SITE);
+    sidebarItem1.setProperties(new HashMap<>() { { put(SITE_NAME, "siteName"); } });
+    sidebarItems.add(sidebarItem1);
+    when(navigationConfigurationService.getConfiguration()).thenReturn(navigationConfiguration);
+    when(navigationConfiguration.getSidebar()).thenReturn(sidebarConfiguration);
+    when(sidebarConfiguration.getItems()).thenReturn(sidebarItems);
+
+    COMMONS_UTILS_UTIL.when(() -> CommonsUtils.getService(NavigationConfigurationService.class)).thenReturn(navigationConfigurationService);
     when(widgetStorage.getWidgetsByProperties(filters)).thenReturn(List.of(widget));
 
     List<Application> apps = staticResourceService.getStaticResourceApplications("siteName", "END_OF_BODY");
