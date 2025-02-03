@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
 
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.TransientApplicationState;
 import org.junit.jupiter.api.Test;
@@ -51,30 +52,33 @@ import java.util.Map;
 @ExtendWith(MockitoExtension.class)
 class StaticResourceServiceTest {
 
-  private static final String   USERNAME  = "testUser";
+  private static final String     USERNAME  = "testUser";
 
-  private static final String   SITE_NAME = "siteName";
-
-  @MockBean
-  private LayoutAclService      layoutAclService;
+  private static final String     SITE_NAME = "siteName";
 
   @MockBean
-  private IdentityManager       identityManager;
+  private LayoutAclService        layoutAclService;
 
   @MockBean
-  private ListenerService       listenerService;
+  private IdentityManager         identityManager;
 
   @MockBean
-  private WidgetStorage         widgetStorage;
+  private ListenerService         listenerService;
+
+  @MockBean
+  private WidgetStorage           widgetStorage;
+
+  @MockBean
+  private UserPortalConfigService userPortalConfigService;
 
   @Autowired
-  private StaticResourceService staticResourceService;
+  private StaticResourceService   staticResourceService;
 
   @Mock
-  private Widget                widget;
+  private Widget                  widget;
 
   @Mock
-  private Identity              identity;
+  private Identity                identity;
 
   @Test
   void getStaticResources() throws IllegalAccessException {

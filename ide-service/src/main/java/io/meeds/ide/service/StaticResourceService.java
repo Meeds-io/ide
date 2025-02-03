@@ -21,6 +21,7 @@ package io.meeds.ide.service;
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.storage.WidgetStorage;
 import io.meeds.layout.service.LayoutAclService;
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.TransientApplicationState;
 import org.exoplatform.portal.pom.spi.portlet.PortletBuilder;
@@ -42,23 +43,30 @@ import static io.meeds.ide.service.WidgetService.NOT_ADMINISTRATOR_USER;
 @Service
 public class StaticResourceService {
 
-  public static final String SITE_NAME = "siteName";
+  public static final String      SITE_NAME  = "siteName";
 
-  public static final String POSITION  = "position";
+  public static final String      POSITION   = "position";
 
-  public static final String ENABLED   = "enabled";
+  public static final String      ENABLED    = "enabled";
 
-  @Autowired
-  private LayoutAclService   layoutAclService;
+  public static final String      CONTENT_ID = "ide/WidgetPortlet";
 
-  @Autowired
-  private IdentityManager    identityManager;
+  public static final String      WIDGET_ID  = "widgetId";
 
   @Autowired
-  private ListenerService    listenerService;
+  private LayoutAclService        layoutAclService;
 
   @Autowired
-  private WidgetStorage      widgetStorage;
+  private IdentityManager         identityManager;
+
+  @Autowired
+  private ListenerService         listenerService;
+
+  @Autowired
+  private WidgetStorage           widgetStorage;
+
+  @Autowired
+  private UserPortalConfigService userPortalConfigService;
 
   public List<Widget> getStaticResources(String siteName, String username) throws IllegalAccessException {
     if (!layoutAclService.isAdministrator(username)) {
@@ -70,16 +78,10 @@ public class StaticResourceService {
   }
 
   public List<Application> getStaticResourceApplications(String siteName, String applicationPosition) {
-    Map<String, String> filters = new LinkedHashMap<>();
-    filters.put(SITE_NAME, siteName);
-    filters.put(POSITION, applicationPosition);
-    filters.put(ENABLED, "true");
-    List<Widget> widgets = new ArrayList<>(widgetStorage.getWidgetsByProperties(filters));
-    if (applicationPosition.equals("END_OF_BODY")) {
-      filters.put(POSITION, "");
-      widgets.addAll(widgetStorage.getWidgetsByProperties(filters));
-    }
-    return widgets.stream().map(this::toApplication).toList();
+    List<Application> applications = new ArrayList<>();
+    applications.addAll(getApplicationsBySite(siteName, applicationPosition));
+    applications.addAll(getMetaSiteStaticResourceApplications(applicationPosition));
+    return applications;
   }
 
   public Widget createStaticResource(Widget widget, String username) throws IllegalAccessException {
@@ -97,10 +99,38 @@ public class StaticResourceService {
     return createdWidget;
   }
 
+  private List<Application> getApplicationsBySite(String siteName, String applicationPosition) {
+    return getWidgetsBySite(siteName, applicationPosition).stream().map(this::toApplication).toList();
+  }
+
+  public List<Application> getMetaSiteStaticResourceApplications(String applicationPosition) {
+    return getWidgetsBySite(userPortalConfigService.getMetaPortal(), applicationPosition).stream()
+                                                                                         .map(this::toApplication)
+                                                                                         .toList();
+  }
+
+  private List<Widget> getWidgetsBySite(String siteName, String applicationPosition) {
+    Map<String, String> filters = createFilters(siteName, applicationPosition);
+    List<Widget> widgets = new ArrayList<>(widgetStorage.getWidgetsByProperties(filters));
+    if ("END_OF_BODY".equals(applicationPosition)) {
+      filters.put(POSITION, "");
+      widgets.addAll(widgetStorage.getWidgetsByProperties(filters));
+    }
+    return widgets;
+  }
+
+  private Map<String, String> createFilters(String siteName, String applicationPosition) {
+    Map<String, String> filters = new LinkedHashMap<>();
+    filters.put(SITE_NAME, siteName);
+    filters.put(POSITION, applicationPosition);
+    filters.put(ENABLED, "true");
+    return filters;
+  }
+
   private Application toApplication(Widget widget) {
     Application app = Application.createPortletApplication();
-    app.setState(new TransientApplicationState("ide/WidgetPortlet",
-                                               new PortletBuilder().add("widgetId", String.valueOf(widget.getId())).build()));
+    app.setState(new TransientApplicationState(CONTENT_ID,
+                                               new PortletBuilder().add(WIDGET_ID, String.valueOf(widget.getId())).build()));
     app.setStorageId(String.valueOf(widget.getId()));
     return app;
   }
