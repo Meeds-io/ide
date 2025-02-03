@@ -21,6 +21,10 @@ package io.meeds.ide.service;
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.storage.WidgetStorage;
 import io.meeds.layout.service.LayoutAclService;
+import io.meeds.social.navigation.constant.SidebarItemType;
+import io.meeds.social.navigation.model.NavigationConfiguration;
+import io.meeds.social.navigation.service.NavigationConfigurationService;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.TransientApplicationState;
@@ -32,10 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.meeds.ide.service.WidgetService.IDE_WIDGET_CREATED_EVENT;
 import static io.meeds.ide.service.WidgetService.NOT_ADMINISTRATOR_USER;
@@ -43,30 +44,32 @@ import static io.meeds.ide.service.WidgetService.NOT_ADMINISTRATOR_USER;
 @Service
 public class StaticResourceService {
 
-  public static final String      SITE_NAME  = "siteName";
+  public static final String             SITE_NAME  = "siteName";
 
-  public static final String      POSITION   = "position";
+  public static final String             POSITION   = "position";
 
-  public static final String      ENABLED    = "enabled";
+  public static final String             ENABLED    = "enabled";
 
-  public static final String      CONTENT_ID = "ide/WidgetPortlet";
+  public static final String             CONTENT_ID = "ide/WidgetPortlet";
 
-  public static final String      WIDGET_ID  = "widgetId";
-
-  @Autowired
-  private LayoutAclService        layoutAclService;
+  public static final String             WIDGET_ID  = "widgetId";
 
   @Autowired
-  private IdentityManager         identityManager;
+  private LayoutAclService               layoutAclService;
 
   @Autowired
-  private ListenerService         listenerService;
+  private IdentityManager                identityManager;
 
   @Autowired
-  private WidgetStorage           widgetStorage;
+  private ListenerService                listenerService;
 
   @Autowired
-  private UserPortalConfigService userPortalConfigService;
+  private WidgetStorage                  widgetStorage;
+
+  @Autowired
+  private UserPortalConfigService        userPortalConfigService;
+
+  private NavigationConfigurationService navigationConfigurationService;
 
   public List<Widget> getStaticResources(String siteName, String username) throws IllegalAccessException {
     if (!layoutAclService.isAdministrator(username)) {
@@ -78,9 +81,10 @@ public class StaticResourceService {
   }
 
   public List<Application> getStaticResourceApplications(String siteName, String applicationPosition) {
-    List<Application> applications = new ArrayList<>();
-    applications.addAll(getApplicationsBySite(siteName, applicationPosition));
-    applications.addAll(getMetaSiteStaticResourceApplications(applicationPosition));
+    List<Application> applications = new ArrayList<>(getApplicationsBySite(siteName, applicationPosition));
+    if (isMetaSiteNavigation(siteName)) {
+      applications.addAll(getMetaSiteStaticResourceApplications(applicationPosition));
+    }
     return applications;
   }
 
@@ -119,6 +123,19 @@ public class StaticResourceService {
     return widgets;
   }
 
+  private boolean isMetaSiteNavigation(String siteName) {
+    NavigationConfiguration navigationConfiguration = getNavigationConfigurationService().getConfiguration();
+    if (navigationConfiguration == null) {
+      return false;
+    }
+    return navigationConfiguration.getSidebar()
+                                  .getItems()
+                                  .stream()
+                                  .anyMatch(sidebarItem -> sidebarItem.getProperties() != null
+                                      && Objects.equals(sidebarItem.getProperties().get(SITE_NAME), siteName)
+                                      && SidebarItemType.SITE.equals(sidebarItem.getType()));
+  }
+
   private Map<String, String> createFilters(String siteName, String applicationPosition) {
     Map<String, String> filters = new LinkedHashMap<>();
     filters.put(SITE_NAME, siteName);
@@ -133,5 +150,12 @@ public class StaticResourceService {
                                                new PortletBuilder().add(WIDGET_ID, String.valueOf(widget.getId())).build()));
     app.setStorageId(String.valueOf(widget.getId()));
     return app;
+  }
+
+  private NavigationConfigurationService getNavigationConfigurationService() {
+    if (navigationConfigurationService == null) {
+      navigationConfigurationService = CommonsUtils.getService(NavigationConfigurationService.class);
+    }
+    return navigationConfigurationService;
   }
 }
