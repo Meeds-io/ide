@@ -19,7 +19,7 @@
 package io.meeds.ide.rest;
 
 import io.meeds.ide.model.Widget;
-import io.meeds.ide.service.StaticResourceApplicationService;
+import io.meeds.ide.service.StaticResourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -36,21 +36,21 @@ import java.util.List;
 @RestController
 @RequestMapping("/static/resources")
 @Tag(name = "/ide/rest/static/resources", description = "Managing Static Resource Applications")
-public class StaticResourceApplicationRest {
+public class StaticResourceRest {
 
   @Autowired
-  private StaticResourceApplicationService staticResourceApplicationService;
+  private StaticResourceService staticResourceApplicationService;
 
   @GetMapping
   @Secured("administrators")
   @Operation(summary = "Retrieve a static resource applications", method = "GET", description = "Retrieve a static resource applications")
-  @ApiResponses(value = { 
-          @ApiResponse(responseCode = "200", description = "Request fulfilled"), 
+  @ApiResponses(value = {
+          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "404", description = "Widget not found"), })
-  public List<Widget> getStaticResourceApplications(HttpServletRequest request,
-                                                    @RequestParam("siteName") String siteName) {
+  public List<Widget> getStaticResources(HttpServletRequest request,
+                                         @RequestParam("siteName") String siteName) {
     try {
-      return staticResourceApplicationService.getStaticResourceApplications(siteName, request.getRemoteUser());
+      return staticResourceApplicationService.getStaticResources(siteName, request.getRemoteUser());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
     }
@@ -62,10 +62,10 @@ public class StaticResourceApplicationRest {
   @ApiResponses(value = {
           @ApiResponse(responseCode = "200", description = "Request fulfilled"),
           @ApiResponse(responseCode = "403", description = "Forbidden"), })
-  public Widget createStaticResourceApplication(HttpServletRequest request,
-                                                @RequestBody Widget widget) {
+  public Widget createStaticResource(HttpServletRequest request,
+                                     @RequestBody Widget widget) {
     try {
-      return staticResourceApplicationService.createStaticResourceApplication(widget, request.getRemoteUser());
+      return staticResourceApplicationService.createStaticResource(widget, request.getRemoteUser());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
     }

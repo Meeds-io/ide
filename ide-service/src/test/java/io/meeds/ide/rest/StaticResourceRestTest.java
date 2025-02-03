@@ -24,7 +24,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.meeds.ide.service.StaticResourceApplicationService;
+import io.meeds.ide.service.StaticResourceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,12 +58,12 @@ import io.meeds.spring.web.security.WebSecurityConfiguration;
 import jakarta.servlet.Filter;
 import lombok.SneakyThrows;
 
-@SpringBootTest(classes = { StaticResourceApplicationRest.class, PortalAuthenticationManager.class, })
+@SpringBootTest(classes = { StaticResourceRest.class, PortalAuthenticationManager.class, })
 @ContextConfiguration(classes = { WebSecurityConfiguration.class })
 @AutoConfigureWebMvc
 @AutoConfigureMockMvc(addFilters = false)
 @ExtendWith(MockitoExtension.class)
-class StaticResourceApplicationRestTest {
+class StaticResourceRestTest {
 
   private static final String REST_PATH     = "/static/resources"; // NOSONAR
 
@@ -84,18 +84,18 @@ class StaticResourceApplicationRestTest {
   }
 
   @MockBean
-  private StaticResourceApplicationService staticResourceApplicationService;
+  private StaticResourceService staticResourceService;
 
   @Autowired
-  private SecurityFilterChain              filterChain;
+  private SecurityFilterChain   filterChain;
 
   @Autowired
-  private WebApplicationContext            context;
+  private WebApplicationContext context;
 
   @Mock
-  private Widget                           widget;
+  private Widget                widget;
 
-  private MockMvc                          mockMvc;
+  private MockMvc               mockMvc;
 
   @BeforeEach
   void setup() {
@@ -111,38 +111,37 @@ class StaticResourceApplicationRestTest {
   }
 
   @Test
-  void getStaticResourceApplicationsAnonymously() throws Exception {
+  void getStaticResourcesAnonymously() throws Exception {
     ResultActions response = mockMvc.perform(get(REST_PATH).param("siteName", "siteName"));
     response.andExpect(status().isForbidden());
   }
 
   @Test
-  void getStaticResourceApplicationsWithUser() throws Exception {
+  void getStaticResourcesWithUser() throws Exception {
     ResultActions response = mockMvc.perform(get(REST_PATH).param("siteName", "siteName").with(testSimpleUser()));
     response.andExpect(status().isForbidden());
   }
 
   @Test
-  void getStaticResourceApplicationsWithAdministrator() throws Exception {
+  void getStaticResourcesWithAdministrator() throws Exception {
     ResultActions response = mockMvc.perform(get(REST_PATH).param("siteName", "siteName").with(testAdministrator()));
     response.andExpect(status().isOk());
 
-    doThrow(new IllegalAccessException()).when(staticResourceApplicationService)
-                                         .getStaticResourceApplications("siteName", SIMPLE_USER);
+    doThrow(new IllegalAccessException()).when(staticResourceService).getStaticResources("siteName", SIMPLE_USER);
 
     response = mockMvc.perform(get(REST_PATH).param("siteName", "siteName").with(testAdministrator()));
     response.andExpect(status().isForbidden());
   }
 
   @Test
-  void createStaticResourceApplicationAnonymously() throws Exception {
+  void createStaticResourceAnonymously() throws Exception {
     ResultActions response =
                            mockMvc.perform(post(REST_PATH).content(asJsonString(widget)).contentType(MediaType.APPLICATION_JSON));
     response.andExpect(status().isForbidden());
   }
 
   @Test
-  void createStaticResourceApplicationWithUser() throws Exception {
+  void createStaticResourceWithUser() throws Exception {
     ResultActions response = mockMvc.perform(post(REST_PATH).with(testSimpleUser())
                                                             .content(asJsonString(widget))
                                                             .contentType(MediaType.APPLICATION_JSON));
@@ -150,14 +149,13 @@ class StaticResourceApplicationRestTest {
   }
 
   @Test
-  void createStaticResourceApplicationWithAdministrator() throws Exception {
+  void createStaticResourceWithAdministrator() throws Exception {
     ResultActions response = mockMvc.perform(post(REST_PATH).with(testAdministrator())
                                                             .content(asJsonString(widget))
                                                             .contentType(MediaType.APPLICATION_JSON));
     response.andExpect(status().isOk());
 
-    doThrow(new IllegalAccessException()).when(staticResourceApplicationService)
-                                         .createStaticResourceApplication(any(Widget.class), anyString());
+    doThrow(new IllegalAccessException()).when(staticResourceService).createStaticResource(any(Widget.class), anyString());
 
     response = mockMvc.perform(post(REST_PATH).with(testAdministrator())
                                               .content(asJsonString(widget))
