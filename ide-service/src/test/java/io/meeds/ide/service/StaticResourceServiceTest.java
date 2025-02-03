@@ -1,7 +1,7 @@
-/**
+/*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -9,22 +9,24 @@
  * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
  */
 package io.meeds.ide.service;
 
+import static io.meeds.ide.service.StaticResourceService.ENABLED;
+import static io.meeds.ide.service.StaticResourceService.POSITION;
 import static io.meeds.ide.service.WidgetService.IDE_WIDGET_CREATED_EVENT;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
 
-
+import org.exoplatform.portal.config.model.Application;
+import org.exoplatform.portal.config.model.TransientApplicationState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -42,60 +44,59 @@ import io.meeds.ide.storage.WidgetStorage;
 import io.meeds.layout.service.LayoutAclService;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-@SpringBootTest(classes = { StaticResourceApplicationService.class, })
+@SpringBootTest(classes = { StaticResourceService.class, })
 @ExtendWith(MockitoExtension.class)
-class StaticResourceApplicationServiceTest {
+class StaticResourceServiceTest {
 
-  private static final String              USERNAME  = "testUser";
+  private static final String   USERNAME  = "testUser";
 
-  private static final String              SITE_NAME = "siteName";
-
-  @MockBean
-  private LayoutAclService                 layoutAclService;
+  private static final String   SITE_NAME = "siteName";
 
   @MockBean
-  private IdentityManager                  identityManager;
+  private LayoutAclService      layoutAclService;
 
   @MockBean
-  private ListenerService                  listenerService;
+  private IdentityManager       identityManager;
 
   @MockBean
-  private WidgetStorage                    widgetStorage;
+  private ListenerService       listenerService;
+
+  @MockBean
+  private WidgetStorage         widgetStorage;
 
   @Autowired
-  private StaticResourceApplicationService staticResourceApplicationService;
+  private StaticResourceService staticResourceService;
 
   @Mock
-  private Widget                           widget;
+  private Widget                widget;
 
   @Mock
-  private Identity                         identity;
+  private Identity              identity;
 
   @Test
-  void getStaticResourceApplications() throws IllegalAccessException {
-    assertThrows(IllegalAccessException.class,
-                 () -> staticResourceApplicationService.getStaticResourceApplications(SITE_NAME, USERNAME));
+  void getStaticResources() throws IllegalAccessException {
+    assertThrows(IllegalAccessException.class, () -> staticResourceService.getStaticResources(SITE_NAME, USERNAME));
 
     when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
     Map<String, String> filters = new LinkedHashMap<>();
     filters.put("siteName", SITE_NAME);
-    staticResourceApplicationService.getStaticResourceApplications(SITE_NAME, USERNAME);
+    staticResourceService.getStaticResources(SITE_NAME, USERNAME);
     verify(widgetStorage).getWidgetsByProperties(filters);
   }
 
   @Test
-  void createStaticResourceApplication() throws IllegalAccessException {
-    assertThrows(IllegalAccessException.class,
-                 () -> staticResourceApplicationService.createStaticResourceApplication(widget, USERNAME));
+  void createStaticResource() throws IllegalAccessException {
+    assertThrows(IllegalAccessException.class, () -> staticResourceService.createStaticResource(widget, USERNAME));
     when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
 
     when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
     when(identity.getId()).thenReturn("5");
     when(widgetStorage.createWidget(widget)).thenReturn(widget);
 
-    Widget savedWidget = staticResourceApplicationService.createStaticResourceApplication(widget, USERNAME);
+    Widget savedWidget = staticResourceService.createStaticResource(widget, USERNAME);
     assertNotNull(savedWidget);
     verify(widget).setCreatorId(5L);
     verify(widget).setModifierId(5L);
@@ -103,5 +104,20 @@ class StaticResourceApplicationServiceTest {
     verify(widget).setModifiedDate(notNull());
     verify(widgetStorage).createWidget(widget);
     verify(listenerService).broadcast(IDE_WIDGET_CREATED_EVENT, null, widget);
+  }
+
+  @Test
+  void getStaticResourceApplications() {
+    Map<String, String> filters = new LinkedHashMap<>();
+    filters.put(SITE_NAME, "siteName");
+    filters.put(POSITION, "END_OF_BODY");
+    filters.put(ENABLED, "true");
+
+    when(widgetStorage.getWidgetsByProperties(filters)).thenReturn(List.of(widget));
+
+    List<Application> apps = staticResourceService.getStaticResourceApplications("siteName", "END_OF_BODY");
+    assertEquals(1, apps.size());
+
+    assertEquals("ide/WidgetPortlet", ((TransientApplicationState) apps.getFirst().getState()).getContentId());
   }
 }
