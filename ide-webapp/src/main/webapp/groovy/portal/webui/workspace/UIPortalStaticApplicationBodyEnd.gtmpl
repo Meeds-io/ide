@@ -1,0 +1,40 @@
+<%
+  import java.util.ArrayList;
+  import java.util.UUID;
+  import org.apache.commons.collections4.CollectionUtils;
+  import org.exoplatform.container.ExoContainerContext;
+  import io.meeds.ide.service.StaticResourceService;
+  import org.exoplatform.portal.config.model.Application;
+  import org.exoplatform.portal.webui.util.PortalDataMapper;
+  import org.exoplatform.portal.webui.application.UIPortlet;
+  import org.exoplatform.portal.mop.SiteKey;
+  def rcontext = _ctx.getRequestContext();
+  def portal = rcontext.getUiPortal();
+  SiteKey siteKey = portal.getSiteKey();
+  String siteName = siteKey.getName();
+  StaticResourceService staticResourceService = ExoContainerContext.getService(StaticResourceService.class);
+  List<Application> applications = staticResourceService.getStaticResourceApplications(siteName, "END_OF_BODY");
+  if (CollectionUtils.isEmpty(applications)) {
+    return;
+  }
+%>
+<div id="UIStaticResource-body-end-container">
+<%
+  for (application in applications) {
+    if (application.getId() == null) {
+      application.setId(UUID.randomUUID().toString())
+    }
+    def child = rcontext.getUiPortal().getChildById(application.getId());
+    if (child != null) {
+      child.processRender(rcontext);
+    } else {
+      UIPortlet uiPortlet = rcontext.getUiPortal().createUIComponent(rcontext, UIPortlet.class, null, null);
+      uiPortlet.setStorageId(application.getStorageId());
+      uiPortlet.setStorageName(application.getStorageId());
+      PortalDataMapper.toUIPortlet(uiPortlet, application);
+      uiPortlet.setParent(rcontext.getUiPortal());
+      uiPortlet.processRender(rcontext);
+    }
+  }
+%>
+</div>
