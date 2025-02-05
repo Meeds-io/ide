@@ -49,6 +49,7 @@
   <properties>
     <io.meeds.social.version>7.0.x-exo-SNAPSHOT</io.meeds.social.version>
     <addon.meeds.layout.version>7.0.x-exo-SNAPSHOT</addon.meeds.layout.version>
+    <addon.meeds.analytics.version>7.0.x-exo-SNAPSHOT</addon.meeds.analytics.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
@@ -67,6 +68,13 @@
         <groupId>io.meeds.layout</groupId>
         <artifactId>layout</artifactId>
         <version>${addon.meeds.layout.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.meeds.analytics</groupId>
+        <artifactId>analytics-parent</artifactId>
+        <version>${addon.meeds.analytics.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
