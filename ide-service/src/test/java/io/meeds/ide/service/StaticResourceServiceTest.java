@@ -25,11 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
 
-import io.meeds.social.navigation.constant.SidebarItemType;
-import io.meeds.social.navigation.model.NavigationConfiguration;
-import io.meeds.social.navigation.model.SidebarConfiguration;
-import io.meeds.social.navigation.model.SidebarItem;
-import io.meeds.social.navigation.service.NavigationConfigurationService;
+import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.Application;
@@ -125,16 +121,7 @@ class StaticResourceServiceTest {
     filters.put(ENABLED, "true");
 
     NavigationConfigurationService navigationConfigurationService = mock(NavigationConfigurationService.class);
-    NavigationConfiguration navigationConfiguration = mock(NavigationConfiguration.class);
-    SidebarConfiguration sidebarConfiguration = mock(SidebarConfiguration.class);
-    List<SidebarItem> sidebarItems = new ArrayList<>();
-    SidebarItem sidebarItem1 = new SidebarItem();
-    sidebarItem1.setType(SidebarItemType.SITE);
-    sidebarItem1.setProperties(new HashMap<>() { { put(SITE_NAME, "siteName"); } });
-    sidebarItems.add(sidebarItem1);
-    when(navigationConfigurationService.getConfiguration()).thenReturn(navigationConfiguration);
-    when(navigationConfiguration.getSidebar()).thenReturn(sidebarConfiguration);
-    when(sidebarConfiguration.getItems()).thenReturn(sidebarItems);
+    when(navigationConfigurationService.isMetaSiteNavigation("siteName")).thenReturn(true);
 
     COMMONS_UTILS_UTIL.when(() -> CommonsUtils.getService(NavigationConfigurationService.class)).thenReturn(navigationConfigurationService);
     when(widgetStorage.getWidgetsByProperties(filters)).thenReturn(List.of(widget));
