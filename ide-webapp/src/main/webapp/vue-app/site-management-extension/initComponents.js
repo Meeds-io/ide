@@ -20,11 +20,13 @@
 import StaticResourceDrawer from './components/StaticResourceDrawer.vue';
 import StaticResourceFormDrawer from './components/StaticResourceFormDrawer.vue';
 import StaticResourceItem from './components/StaticResourceItem.vue';
+import StaticResourceFormDialog from './components/StaticResourceFormDialog.vue';
 import CodeEditor from '../widget-editor/components/form/CodeEditor.vue';
 
 const components = {
   'site-management-static-resource-drawer': StaticResourceDrawer,
   'site-management-static-resource-form-drawer': StaticResourceFormDrawer,
+  'site-management-static-resource-form-dialog': StaticResourceFormDialog,
   'site-management-static-resource-item': StaticResourceItem,
   'widget-code-editor': CodeEditor,
 };

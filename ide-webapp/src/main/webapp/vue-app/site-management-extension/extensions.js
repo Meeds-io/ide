@@ -36,3 +36,8 @@ extensionRegistry.registerComponent('site-management', 'site-management-drawers'
   id: 'static-resource-form-drawer',
   vueComponent: Vue.options.components['site-management-static-resource-form-drawer'],
 });
+
+extensionRegistry.registerComponent('site-management', 'site-management-drawers', {
+  id: 'static-resource-form-dialog',
+  vueComponent: Vue.options.components['site-management-static-resource-form-dialog'],
+});
