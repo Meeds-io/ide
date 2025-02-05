@@ -21,9 +21,7 @@ package io.meeds.ide.service;
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.storage.WidgetStorage;
 import io.meeds.layout.service.LayoutAclService;
-import io.meeds.social.navigation.constant.SidebarItemType;
-import io.meeds.social.navigation.model.NavigationConfiguration;
-import io.meeds.social.navigation.service.NavigationConfigurationService;
+import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.UserPortalConfigService;
@@ -86,8 +84,8 @@ public class StaticResourceService {
   public List<Application> getStaticResourceApplications(String siteName, String applicationPosition) {
     List<Application> applications = new ArrayList<>(getApplicationsBySite(siteName, applicationPosition));
     if (!StringUtils.equals(userPortalConfigService.getMetaPortal(), siteName)
-        && (isMetaSiteNavigation(siteName) || siteName.startsWith(SPACE_SITE_TYPE_PREFIX))) {
-      applications.addAll(getMetaSiteStaticResourceApplications(applicationPosition));
+        && (getNavigationConfigurationService().isMetaSiteNavigation(siteName) || siteName.startsWith(SPACE_SITE_TYPE_PREFIX))) {
+      applications.addAll(getApplicationsBySite(userPortalConfigService.getMetaPortal(), applicationPosition));
     }
     return applications;
   }
@@ -111,12 +109,6 @@ public class StaticResourceService {
     return getWidgetsBySite(siteName, applicationPosition).stream().map(this::toApplication).toList();
   }
 
-  public List<Application> getMetaSiteStaticResourceApplications(String applicationPosition) {
-    return getWidgetsBySite(userPortalConfigService.getMetaPortal(), applicationPosition).stream()
-                                                                                         .map(this::toApplication)
-                                                                                         .toList();
-  }
-
   private List<Widget> getWidgetsBySite(String siteName, String applicationPosition) {
     Map<String, String> filters = createFilters(siteName, applicationPosition);
     List<Widget> widgets = new ArrayList<>(widgetStorage.getWidgetsByProperties(filters));
@@ -125,19 +117,6 @@ public class StaticResourceService {
       widgets.addAll(widgetStorage.getWidgetsByProperties(filters));
     }
     return widgets;
-  }
-
-  private boolean isMetaSiteNavigation(String siteName) {
-    NavigationConfiguration navigationConfiguration = getNavigationConfigurationService().getConfiguration();
-    if (navigationConfiguration == null) {
-      return false;
-    }
-    return navigationConfiguration.getSidebar()
-                                  .getItems()
-                                  .stream()
-                                  .anyMatch(sidebarItem -> sidebarItem.getProperties() != null
-                                      && Objects.equals(sidebarItem.getProperties().get(SITE_NAME), siteName)
-                                      && SidebarItemType.SITE.equals(sidebarItem.getType()));
   }
 
   private Map<String, String> createFilters(String siteName, String applicationPosition) {
