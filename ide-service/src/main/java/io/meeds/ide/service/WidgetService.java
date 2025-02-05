@@ -20,6 +20,7 @@ package io.meeds.ide.service;
 
 import java.time.LocalDateTime;
 
+import io.meeds.ide.constant.WidgetType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -82,6 +83,7 @@ public class WidgetService {
     widget.setModifierId(Long.parseLong(identity.getId()));
     widget.setCreatedDate(LocalDateTime.now());
     widget.setModifiedDate(LocalDateTime.now());
+    widget.setType(WidgetType.APP);
     Widget createdWidget = widgetStorage.createWidget(widget);
     listenerService.broadcast(IDE_WIDGET_CREATED_EVENT, null, createdWidget);
     return createdWidget;

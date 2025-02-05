@@ -104,6 +104,36 @@
           v-for="item in jsResources"
           :key="item"
           :resource="item" />
+        <template v-if="isMetaSite">
+          <div class="d-flex pb-2 pt-4 align-center">
+            <div class="font-weight-bold">
+              {{ $t('siteManagement.staticResource.label.customApps') }}
+            </div>
+            <v-spacer />
+            <v-btn
+              class="justify-end"
+              x-large
+              icon
+              dark
+              @click="createStaticResource('app')">
+              <v-icon size="20" class="primary">fas fa-plus</v-icon>
+            </v-btn>
+          </div>
+          <div class="d-flex pb-2 align-center">
+            <div class="text-header">
+              {{ $t('siteManagement.staticResource.label.name') }}
+            </div>
+            <v-spacer />
+            <div class="text-header">
+              {{ $t('siteManagement.staticResource.label.actions') }}
+            </div>
+          </div>
+          <site-management-static-resource-item
+            initialized="initialized"
+            v-for="item in appResources"
+            :key="item"
+            :resource="item" />
+        </template>
       </v-card>
     </template>
   </exo-drawer>
@@ -116,10 +146,14 @@ export default {
     expanded: false,
     loading: false,
     site: null,
+    appResources: [],
     cssResources: [],
     jsResources: []
   }),
   computed: {
+    isMetaSite() {
+      return this.site?.metaSite;
+    },
     siteDisplayName() {
       return this.site?.displayName;
     },
@@ -133,7 +167,6 @@ export default {
   created() {
     this.$root.$on('open-site-static-resource-drawer', this.open);
     this.$root.$on('refresh-site-static-resources', this.retrieveStaticResources);
-
   },
   beforeDestroy() {
     this.$root.$off('open-site-static-resource-drawer', this.open);
@@ -146,6 +179,7 @@ export default {
       this.$refs.drawer.open();
     },
     close() {
+      this.appResources = [];
       this.cssResources = [];
       this.jsResources = [];
       this.$refs.drawer.close();
@@ -161,8 +195,9 @@ export default {
       return this.$staticResourceApplicationService.getStaticResourceApplications({
         siteName: this.siteName,
       }).then((resources) => {
-        this.cssResources = resources?.filter(resource => resource?.type === 'CSS');
+        this.appResources = resources?.filter(resource => resource?.type === 'APP');
         this.jsResources = resources?.filter(resource => resource?.type === 'JS');
+        this.cssResources = resources?.filter(resource => resource?.type === 'CSS');
       }).finally(() => {
         this.loading = false;
       });
