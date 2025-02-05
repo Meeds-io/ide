@@ -24,6 +24,7 @@ import io.meeds.layout.service.LayoutAclService;
 import io.meeds.social.navigation.constant.SidebarItemType;
 import io.meeds.social.navigation.model.NavigationConfiguration;
 import io.meeds.social.navigation.service.NavigationConfigurationService;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.Application;
@@ -84,7 +85,8 @@ public class StaticResourceService {
 
   public List<Application> getStaticResourceApplications(String siteName, String applicationPosition) {
     List<Application> applications = new ArrayList<>(getApplicationsBySite(siteName, applicationPosition));
-    if (isMetaSiteNavigation(siteName) || siteName.startsWith(SPACE_SITE_TYPE_PREFIX)) {
+    if (!StringUtils.equals(userPortalConfigService.getMetaPortal(), siteName)
+        && (isMetaSiteNavigation(siteName) || siteName.startsWith(SPACE_SITE_TYPE_PREFIX))) {
       applications.addAll(getMetaSiteStaticResourceApplications(applicationPosition));
     }
     return applications;
