@@ -91,7 +91,6 @@ export default {
         this.$root.$emit('refresh-site-static-resources');
       }).finally(() => {
         this.loading = false;
-        this.close();
       });
     },
     updateResource() {

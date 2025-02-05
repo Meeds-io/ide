@@ -45,21 +45,6 @@ export function updateWidget(widget) {
   });
 }
 
-export function createWidget(widget) {
-  return fetch('/ide/rest/widgets', {
-    credentials: 'include',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(widget),
-  }).then((resp) => {
-    if (!resp?.ok) {
-      throw new Error('Error when creating widget');
-    }
-  });
-}
-
 export function deleteWidget(widgetId) {
   return fetch(`/ide/rest/widgets/${widgetId}`, {
     credentials: 'include',
@@ -67,29 +52,6 @@ export function deleteWidget(widgetId) {
   }).then((resp) => {
     if (!resp?.ok) {
       throw new Error('Error when deleting widget');
-    }
-  });
-}
-
-export function getStaticWidget(paramsObj) {
-  const formData = new FormData();
-  if (paramsObj) {
-    Object.keys(paramsObj).forEach(key => {
-      const value = paramsObj[key];
-      if (window.Array && Array.isArray && Array.isArray(value)) {
-        value.forEach(val => formData.append(key, val));
-      } else {
-        formData.append(key, value);
-      }
-    });
-  }
-  const params = new URLSearchParams(formData).toString();
-  return fetch(`/ide/rest/widgets/static?${params}`, {
-    credentials: 'include',
-    method: 'GET',
-  }).then((resp) => {
-    if (resp?.ok) {
-      return resp.json();
     }
   });
 }

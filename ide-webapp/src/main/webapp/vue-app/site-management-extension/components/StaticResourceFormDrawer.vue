@@ -59,21 +59,24 @@
           v-if="customizePosition"
           v-model="position"
           class="mt-0">
-          <v-radio value="START_OF_HEAD" :label="$t('siteManagement.staticResource.label.customizePosition.startOfHead')" />
-          <v-radio value="END_OF_HEAD" :label="$t('siteManagement.staticResource.label.customizePosition.endOfHead')" />
-          <v-radio value="START_OF_BODY" :label="$t('siteManagement.staticResource.label.customizePosition.startOfBody')" />
-          <v-radio value="END_OF_BODY" :label="$t('siteManagement.staticResource.label.customizePosition.endOfBody')" />
+          <v-radio
+            v-for="p in positions"
+            :key="p.value"
+            :label="p.label"
+            :value="p.value" />
         </v-radio-group>
-        <div class="text-header pt-4">
-          Code
-        </div>
-        <widget-code-editor
-          v-model="content"
-          :mode="resourceType === 'js' ? 'javascript' : resourceType"
-          :expanded="false"
-          :min-height="editorHeight"
-          :multiple="false"
-          class="application-body" />
+        <template v-if="!isApplication">
+          <div class="text-header pt-4">
+            Code
+          </div>
+          <widget-code-editor
+            v-model="content"
+            :mode="resourceType === 'js' ? 'javascript' : resourceType"
+            :expanded="false"
+            :min-height="editorHeight"
+            :multiple="false"
+            class="application-body" />
+        </template>
       </v-card>
     </template>
     <template #footer>
@@ -85,6 +88,14 @@
           {{ $t('siteManagement.staticResource.label.cancel') }}
         </v-btn>
         <v-btn
+          v-if="isApplication"
+          :disabled="disableNextButton"
+          class="btn btn-primary ms-2"
+          @click="next">
+          Next
+        </v-btn>
+        <v-btn
+          v-else
           :disabled="disableSaveButton"
           :loading="loading"
           class="btn btn-primary ms-2"
@@ -124,37 +135,59 @@ export default {
     resourceType() {
       return this.setting?.resourceType;
     },
+    isApplication() {
+      return this.resourceType === 'app';
+    },
     siteName() {
       return this.setting?.siteName;
     },
     drawerTitle() {
-      return this.resourceType === 'css' ? this.$t('siteManagement.staticResource.label.addCss') : this.$t('siteManagement.staticResource.label.addJs');
+      const action = this.resourceId ? 'update' : 'add';
+      if (this.isApplication) {
+        return this.$t(`siteManagement.staticResource.label.${action}CustomApp`);
+      }
+      return this.resourceType === 'css' ? this.$t(`siteManagement.staticResource.label.${action}Css`) : this.$t(`siteManagement.staticResource.label.${action}Js`);
     },
     saveButtonLabel() {
       return this.resourceId ? this.$t('siteManagement.staticResource.label.update') : this.$t('siteManagement.staticResource.label.save');
     },
     disableSaveButton() {
-      return !this.resourceChanged || !this.content || !this.StaticResourceName;
+      return !this.resourceChanged || (!this.isApplication && !this.content) || !this.StaticResourceName;
+    },
+    disableNextButton() {
+      return !this.StaticResourceName;
     },
     resourceChanged() {
       return this.resourceContent !== this.content || this.resourceName !== this.StaticResourceName || this.customizePosition && (this.resourcePosition !== this.position) || !!this.resourcePosition !== this.customizePosition;
     },
     editorHeight() {
       return `calc(100% - ${this.customizePosition ? '332' : '200'}px)`;
+    },
+    positions() {
+      return [
+        {value: 'START_OF_HEAD', label: this.$t('siteManagement.staticResource.label.customizePosition.startOfHead'), enabled: !this.isApplication},
+        {value: 'END_OF_HEAD', label: this.$t('siteManagement.staticResource.label.customizePosition.endOfHead'), enabled: !this.isApplication},
+        {value: 'START_OF_BODY', label: this.$t('siteManagement.staticResource.label.customizePosition.startOfBody')},
+        {value: 'END_OF_BODY', label: this.$t('siteManagement.staticResource.label.customizePosition.endOfBody')},
+      ].filter(filter => filter.enabled == null || filter.enabled === true);
     }
   },
   created() {
     this.$root.$on('open-site-static-resource-form-drawer', this.open);
+    this.$root.$on('refresh-site-static-resources', this.close);
   },
   beforeDestroy() {
     this.$root.$off('open-site-static-resource-form-drawer', this.open);
+    this.$root.$off('refresh-site-static-resources', this.close);
   },
   methods: {
     open(setting) {
       if (setting?.id) {
         this.resource = setting;
-        this.setting = { ...{siteName: setting?.properties?.siteName,
-          resourceType: setting?.type.toLowerCase()} };
+        this.setting = {
+          ...{
+            siteName: setting?.properties?.siteName,
+            resourceType: setting?.type.toLowerCase()} };
         this.StaticResourceName = setting?.properties?.resourceName;
         this.customizePosition = !!setting?.properties?.position;
         this.position = setting?.properties?.position || 'END_OF_BODY';
@@ -205,6 +238,22 @@ export default {
           this.close();
         });
       }
+    },
+    next() {
+      const resource = {
+        id: this.resourceId,
+        css: this.resource?.css,
+        js: this.resource?.js,
+        html: this.resource?.html,
+        type: this.resourceType?.toUpperCase(),
+        properties: {
+          siteName: this.siteName,
+          resourceName: this.StaticResourceName,
+          position: this.customizePosition ? this.position : '',
+          enabled: true
+        }
+      };
+      this.$root.$emit('open-site-static-resource-form-dialog', resource);
     }
   }
 };
