@@ -29,18 +29,22 @@ import javax.portlet.PortletRequestDispatcher;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
+import io.meeds.social.cms.service.CMSService;
 import org.exoplatform.commons.ObjectAlreadyExistsException;
+import org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet;
 import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.portal.config.model.Application;
+import org.exoplatform.portal.config.model.ApplicationState;
+import org.exoplatform.portal.mop.service.LayoutService;
+import org.exoplatform.portal.pom.spi.portlet.Portlet;
+import org.exoplatform.portal.webui.application.UIPortlet;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.webui.Utils;
 
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.service.WidgetService;
-import io.meeds.social.portlet.CMSPortlet;
 
-public class WidgetPortlet extends CMSPortlet {
-
-  private static final String OBJECT_TYPE               = "widget";
+public class WidgetPortlet extends GenericDispatchedViewPortlet {
 
   private static final String WIDGET_ID_PARAM           = "widgetId";
 
@@ -48,11 +52,12 @@ public class WidgetPortlet extends CMSPortlet {
 
   private String              editDispatchedPath;
 
+  private LayoutService       layoutService;
+
   @Override
   public void init(PortletConfig config) throws PortletException {
     super.init(config);
     this.editDispatchedPath = config.getInitParameter("portlet-edit-dispatched-file-path");
-    this.contentType = OBJECT_TYPE;
   }
 
   @Override
@@ -77,8 +82,7 @@ public class WidgetPortlet extends CMSPortlet {
 
   private void checkPreferences(RenderRequest request) throws PortletException {
     PortletPreferences preferences = request.getPreferences();
-    if (preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null) != null
-        && preferences.getValue(WIDGET_ID_PARAM, null) == null) {
+    if (preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null) != null && preferences.getValue(WIDGET_ID_PARAM, null) == null) {
       long portletInstanceId = Long.parseLong(preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null));
       Identity identity = Utils.getViewerIdentity();
       try {
@@ -90,7 +94,12 @@ public class WidgetPortlet extends CMSPortlet {
           widget = widgetService.createWidget(widget, identity.getRemoteId());
         }
         preferences.setValue(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
-        savePreference(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
+        String storageId = UIPortlet.getCurrentUIPortlet().getStorageId();
+        Application applicationModel = getLayoutService().getApplicationModel(storageId);
+        ApplicationState state = applicationModel.getState();
+        Portlet prefs = getLayoutService().load(state);
+        prefs.setValue(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
+        layoutService.save(state, prefs);
       } catch (IllegalAccessException e) {
         throw new PortletException("User not allowed to change Widget settings", e);
       } catch (ObjectAlreadyExistsException e) {
@@ -99,4 +108,10 @@ public class WidgetPortlet extends CMSPortlet {
     }
   }
 
+  private LayoutService getLayoutService() {
+    if (layoutService == null) {
+      layoutService = ExoContainerContext.getService(LayoutService.class);
+    }
+    return layoutService;
+  }
 }

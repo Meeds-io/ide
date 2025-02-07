@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  * 
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,41 +17,40 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-export function getWidget(id) {
-  return fetch(`/ide/rest/widgets/${id}`, {
-    method: 'GET',
+export function createStaticResourceApplication(resourceApplication) {
+  return fetch('/ide/rest/static/resources', {
     credentials: 'include',
-  }).then(resp => {
-    if (!resp?.ok) {
-      throw new Error('Error when retrieving widget by id');
-    } else {
-      return resp.json();
-    }
-  });
-}
-
-export function updateWidget(widget) {
-  return fetch(`/ide/rest/widgets/${widget.id}`, {
-    credentials: 'include',
-    method: 'PUT',
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(widget),
+    body: JSON.stringify(resourceApplication),
   }).then((resp) => {
     if (!resp?.ok) {
-      throw new Error('Error when updating widget');
+      throw new Error('Error when creating static resource application');
     }
   });
 }
 
-export function deleteWidget(widgetId) {
-  return fetch(`/ide/rest/widgets/${widgetId}`, {
+export function getStaticResourceApplications(paramsObj) {
+  const formData = new FormData();
+  if (paramsObj) {
+    Object.keys(paramsObj).forEach(key => {
+      const value = paramsObj[key];
+      if (window.Array && Array.isArray && Array.isArray(value)) {
+        value.forEach(val => formData.append(key, val));
+      } else {
+        formData.append(key, value);
+      }
+    });
+  }
+  const params = new URLSearchParams(formData).toString();
+  return fetch(`/ide/rest/static/resources?${params}`, {
     credentials: 'include',
-    method: 'DELETE'
+    method: 'GET',
   }).then((resp) => {
-    if (!resp?.ok) {
-      throw new Error('Error when deleting widget');
+    if (resp?.ok) {
+      return resp.json();
     }
   });
 }

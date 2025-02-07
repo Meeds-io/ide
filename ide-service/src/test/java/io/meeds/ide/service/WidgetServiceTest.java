@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -141,6 +141,18 @@ public class WidgetServiceTest {
     verify(widget).setModifiedDate(notNull());
     verify(widgetStorage).updateWidget(widget);
     verify(listenerService).broadcast(IDE_WIDGET_UPDATED_EVENT, null, widget);
+  }
+
+  @Test
+  void deleteWidget() throws ObjectNotFoundException, IllegalAccessException {
+    assertThrows(IllegalAccessException.class, () -> widgetService.deleteWidget(6L, USERNAME));
+
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+
+    when(widgetStorage.getWidget(6L)).thenReturn(widget);
+    widgetService.deleteWidget(6L, USERNAME);
+
+    verify(widgetStorage, times(1)).deleteWidgetById(6L);
   }
 
 }

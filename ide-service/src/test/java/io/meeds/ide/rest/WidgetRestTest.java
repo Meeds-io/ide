@@ -19,12 +19,9 @@
 package io.meeds.ide.rest;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -237,6 +234,34 @@ public class WidgetRestTest {
     ResultActions response = mockMvc.perform(put(REST_PATH + "/1").with(testAdministrator())
                                                                   .content(asJsonString(widget))
                                                                   .contentType(MediaType.APPLICATION_JSON));
+    response.andExpect(status().isForbidden());
+  }
+
+  @Test
+  void deleteWidgetAnonymously() throws Exception {
+    ResultActions response = mockMvc.perform(delete(REST_PATH + "/1"));
+    response.andExpect(status().isForbidden());
+  }
+
+  @Test
+  void deleteWidgetWithUser() throws Exception {
+    ResultActions response = mockMvc.perform(delete(REST_PATH + "/1").with(testSimpleUser()));
+    response.andExpect(status().isForbidden());
+  }
+
+  @Test
+  void deleteWidgetWithAdministrator() throws Exception {
+    ResultActions response = mockMvc.perform(delete(REST_PATH + "/1").with(testAdministrator()));
+    response.andExpect(status().isOk());
+
+    doThrow(new ObjectNotFoundException("Widget with id 1 doesn't exists")).when(widgetService)
+            .deleteWidget(1, SIMPLE_USER);
+    response = mockMvc.perform(delete(REST_PATH + "/1").with(testAdministrator()));
+    response.andExpect(status().isNotFound());
+
+    doThrow(new IllegalAccessException()).when(widgetService)
+            .deleteWidget(1, SIMPLE_USER);
+    response = mockMvc.perform(delete(REST_PATH + "/1").with(testAdministrator()));
     response.andExpect(status().isForbidden());
   }
 
