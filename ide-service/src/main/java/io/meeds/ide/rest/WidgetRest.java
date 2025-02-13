@@ -52,12 +52,10 @@ public class WidgetRest {
   private WidgetService             widgetService;
 
   @GetMapping("{id}")
-  @Operation(summary = "Retrieve a Web application widget",
-             method = "GET",
-             description = "This will retrieve a page template designated by its id")
+  @Operation(summary = "Retrieve a Web application widget", method = "GET", description = "This will retrieve a page template designated by its id")
   @ApiResponses(value = {
-                          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "404", description = "Widget not found"),
+    @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "404", description = "Widget not found"),
   })
   public Widget getWidget(
                           @Parameter(description = "Widget identifier")
@@ -71,12 +69,10 @@ public class WidgetRest {
   }
 
   @GetMapping("{id}/html")
-  @Operation(summary = "Retrieve a Web application widget html",
-             method = "GET",
-             description = "Retrieve a Web application widget html")
+  @Operation(summary = "Retrieve a Web application widget html", method = "GET", description = "Retrieve a Web application widget html")
   @ApiResponses(value = {
-                          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "404", description = "Widget not found"),
+    @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "404", description = "Widget not found"),
   })
   public ResponseEntity<String> getWidgetHtml(
                                               HttpServletRequest request,
@@ -95,12 +91,10 @@ public class WidgetRest {
   }
 
   @GetMapping("{id}/css")
-  @Operation(summary = "Retrieve a Web application widget css",
-             method = "GET",
-             description = "Retrieve a Web application widget css")
+  @Operation(summary = "Retrieve a Web application widget css", method = "GET", description = "Retrieve a Web application widget css")
   @ApiResponses(value = {
-                          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "404", description = "Widget not found"),
+    @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "404", description = "Widget not found"),
   })
   public ResponseEntity<String> getWidgetCss(
                                              HttpServletRequest request,
@@ -119,12 +113,10 @@ public class WidgetRest {
   }
 
   @GetMapping("{id}/js")
-  @Operation(summary = "Retrieve a Web application widget javascript",
-             method = "GET",
-             description = "Retrieve a Web application widget javascript")
+  @Operation(summary = "Retrieve a Web application widget javascript", method = "GET", description = "Retrieve a Web application widget javascript")
   @ApiResponses(value = {
-                          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "404", description = "Widget not found"),
+    @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "404", description = "Widget not found"),
   })
   public ResponseEntity<String> getWidgetJs(
                                             HttpServletRequest request,
@@ -136,7 +128,7 @@ public class WidgetRest {
       return ResponseEntity.ok()
                            .cacheControl(CACHE_CONTROL)
                            .contentType(MediaType.parseMediaType("text/javascript"))
-                           .body(widget.getJs());
+                           .body("(function() {"+ widget.getJs() +"})()");
     } catch (ObjectNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
     }
@@ -146,9 +138,9 @@ public class WidgetRest {
   @Secured("administrators")
   @Operation(summary = "Delete a Web application widget ", method = "DELETE", description = "This deletes a Web application widget")
   @ApiResponses(value = {
-          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-          @ApiResponse(responseCode = "403", description = "Forbidden"),
-          @ApiResponse(responseCode = "404", description = "Not found"),
+    @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "403", description = "Forbidden"),
+    @ApiResponse(responseCode = "404", description = "Not found"),
   })
   public void deleteWidget(HttpServletRequest request,
                            @Parameter(description = "Widget id", required = true)
@@ -165,13 +157,11 @@ public class WidgetRest {
 
   @PutMapping("{id}")
   @Secured("administrators")
-  @Operation(summary = "Update an existing a Web application widget",
-             method = "PUT",
-             description = "Update an existing a Web application widget")
+  @Operation(summary = "Update an existing a Web application widget", method = "PUT", description = "Update an existing a Web application widget")
   @ApiResponses(value = {
-                          @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "403", description = "Forbidden"),
-                          @ApiResponse(responseCode = "404", description = "Not found"),
+    @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "403", description = "Forbidden"),
+    @ApiResponse(responseCode = "404", description = "Not found"),
   })
   public void updateWidget(
                            HttpServletRequest request,

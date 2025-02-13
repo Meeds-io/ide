@@ -118,9 +118,19 @@ export default {
         this.$refs.code.append(htmlElement);
       }
       if (this.js) {
+        window.ideJsCodeExecuted = false;
         const scriptElement = document.createElement('script');
-        scriptElement.innerText = this.js;
+        scriptElement.innerHTML = `
+          (function() {
+            ${this.js}
+          })();
+          window.ideJsCodeExecuted = true;
+        `;
         this.$refs.code.append(scriptElement);
+        if (!window.ideJsCodeExecuted) {
+          console.error('An error occurred in JS code execution, please make sure adding semicolons in JS');
+          this.$root.$emit('alert-message', this.$t('codeEditor.jsExecutionError'), 'warning');
+        }
       }
       this.modified = false;
     },
