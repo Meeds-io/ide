@@ -250,8 +250,18 @@ export default {
       }
       if (this.js) {
         const scriptElement = document.createElement('script');
-        scriptElement.innerText = this.js;
+        window.ideJsCodeExecuted = false;
+        scriptElement.innerText = `
+          function() {
+            ${this.js}
+          })();
+          window.ideJsCodeExecuted = true;
+        `;
         this.$refs.code.append(scriptElement);
+        if (!window.ideJsCodeExecuted) {
+          console.error('An error occurred in JS code execution, please make sure adding semicolons in JS');
+          this.$root.$emit('alert-message', 'warning', this.$t('codeEditor.jsExecutionError'));
+        }
       }
       this.modified = false;
     },
