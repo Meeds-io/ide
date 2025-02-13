@@ -186,7 +186,7 @@ public class WidgetRestTest {
     when(widget.getJs()).thenReturn(JS_CONTENT);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/js"));
     response.andExpect(status().isOk())
-            .andExpect(content().string(JS_CONTENT))
+            .andExpect(content().string("(function() {"+ JS_CONTENT +"})()"))
             .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "text/javascript"));
   }
 
