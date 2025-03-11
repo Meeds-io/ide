@@ -66,13 +66,6 @@ class WidgetPortletInstancePreferencePluginTest {
   void generatePreferences() throws ObjectNotFoundException {
     Map<String, Preference> map = new HashMap<>();
     map.put(DATA_PREF_NAME, new Preference(SETTING_NAME, "value", false));
-    Portlet preferences = new Portlet(map);
-    List<PortletInstancePreference> generatedPreferences = widgetPortletInstancePreferencePlugin.generatePreferences(null,
-                                                                                                                     preferences);
-    assertNotNull(generatedPreferences);
-    assertEquals(1, generatedPreferences.size());
-    assertEquals(DATA_PREF_NAME, generatedPreferences.getFirst().getName());
-
     map.remove(DATA_PREF_NAME);
     map.put(WIDGET_ID_PREF_NAME, new Preference(SETTING_NAME, "1", false));
     Widget widget = new Widget();
@@ -80,8 +73,8 @@ class WidgetPortletInstancePreferencePluginTest {
     widget.setHtml("Html");
     widget.setCss("Css");
     when(widgetService.getWidget(1L)).thenReturn(widget);
-    preferences = new Portlet(map);
-    generatedPreferences = widgetPortletInstancePreferencePlugin.generatePreferences(null, preferences);
+    Portlet preferences = new Portlet(map);
+    List<PortletInstancePreference> generatedPreferences = widgetPortletInstancePreferencePlugin.generatePreferences(null, preferences);
     assertNotNull(generatedPreferences);
     assertEquals(1, generatedPreferences.size());
     assertEquals(DATA_PREF_NAME, generatedPreferences.getFirst().getName());

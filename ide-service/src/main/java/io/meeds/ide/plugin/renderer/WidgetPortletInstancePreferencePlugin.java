@@ -55,22 +55,15 @@ public class WidgetPortletInstancePreferencePlugin implements PortletInstancePre
   @Override
   @SneakyThrows
   public List<PortletInstancePreference> generatePreferences(Application application, Portlet preferences) {
-    if (preferences != null && preferences.getPreference(DATA_INIT_PREFERENCE_NAME) != null) {
-      return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME,
-                                                                     preferences.getPreference(DATA_INIT_PREFERENCE_NAME)
-                                                                                .getValue()));
-    } else {
-      long widgetId = 0L;
-      if (preferences != null) {
-        widgetId = Long.parseLong(preferences.getPreference(WIDGET_ID_PARAM).getValue());
-      }
-      Widget widget = widgetService.getWidget(widgetId);
-      JSONObject json = new JSONObject();
-      json.put("html", widget.getHtml());
-      json.put("js", widget.getJs());
-      json.put("css", widget.getCss());
-      return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, json.toString()));
+    long widgetId = 0L;
+    if (preferences != null) {
+      widgetId = Long.parseLong(preferences.getPreference(WIDGET_ID_PARAM).getValue());
     }
+    Widget widget = widgetService.getWidget(widgetId);
+    JSONObject json = new JSONObject();
+    json.put("html", widget.getHtml());
+    json.put("js", widget.getJs());
+    json.put("css", widget.getCss());
+    return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, json.toString()));
   }
-
 }
