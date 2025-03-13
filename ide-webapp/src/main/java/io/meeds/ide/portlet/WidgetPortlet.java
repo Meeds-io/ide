@@ -19,6 +19,8 @@
 package io.meeds.ide.portlet;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -29,7 +31,7 @@ import javax.portlet.PortletRequestDispatcher;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
-import net.minidev.json.JSONObject;
+import io.meeds.social.util.JsonUtils;
 import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet;
 import org.exoplatform.container.ExoContainerContext;
@@ -105,11 +107,11 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
         ApplicationState state = applicationModel.getState();
         Portlet prefs = getLayoutService().load(state);
         prefs.setValue(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
-        JSONObject json = new JSONObject();
-        json.put("html", widget.getHtml());
-        json.put("js", widget.getJs());
-        json.put("css", widget.getCss());
-        prefs.setValue(DATA_INIT_PREFERENCE_NAME, json.toString());
+        Map<String, String> content = new HashMap<>();
+        content.put("html", widget.getHtml());
+        content.put("js", widget.getJs());
+        content.put("css", widget.getCss());
+        prefs.setValue(DATA_INIT_PREFERENCE_NAME, JsonUtils.toJsonString(content));
         layoutService.save(state, prefs);
       } catch (IllegalAccessException e) {
         throw new PortletException("User not allowed to change Widget settings", e);

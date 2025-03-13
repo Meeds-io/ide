@@ -19,11 +19,13 @@
 package io.meeds.ide.plugin.renderer;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.service.WidgetService;
-import org.json.JSONObject;
+import io.meeds.social.util.JsonUtils;
 import org.springframework.stereotype.Service;
 
 import org.exoplatform.portal.config.model.Application;
@@ -60,10 +62,10 @@ public class WidgetPortletInstancePreferencePlugin implements PortletInstancePre
       widgetId = Long.parseLong(preferences.getPreference(WIDGET_ID_PARAM).getValue());
     }
     Widget widget = widgetService.getWidget(widgetId);
-    JSONObject json = new JSONObject();
-    json.put("html", widget.getHtml());
-    json.put("js", widget.getJs());
-    json.put("css", widget.getCss());
-    return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, json.toString()));
+    Map<String, String> content = new HashMap<>();
+    content.put("html", widget.getHtml());
+    content.put("js", widget.getJs());
+    content.put("css", widget.getCss());
+    return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, JsonUtils.toJsonString(content)));
   }
 }
