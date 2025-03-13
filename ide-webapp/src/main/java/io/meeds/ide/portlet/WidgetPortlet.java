@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the Meeds project (https://meeds.io/).
  *
  * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
@@ -19,6 +19,8 @@
 package io.meeds.ide.portlet;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -29,7 +31,7 @@ import javax.portlet.PortletRequestDispatcher;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
-import io.meeds.social.cms.service.CMSService;
+import io.meeds.social.util.JsonUtils;
 import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet;
 import org.exoplatform.container.ExoContainerContext;
@@ -43,6 +45,9 @@ import org.exoplatform.social.webui.Utils;
 
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.service.WidgetService;
+
+import static io.meeds.layout.util.JsonUtils.fromJsonString;
+import static io.meeds.social.portlet.CMSPortlet.DATA_INIT_PREFERENCE_NAME;
 
 public class WidgetPortlet extends GenericDispatchedViewPortlet {
 
@@ -89,7 +94,10 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
         WidgetService widgetService = ExoContainerContext.getService(WidgetService.class);
         Widget widget = widgetService.getWidgetByPortletId(portletInstanceId);
         if (widget == null) {
-          widget = new Widget();
+          widget = fromJsonString(preferences.getValue(DATA_INIT_PREFERENCE_NAME, null), Widget.class);
+          if (widget == null) {
+            widget = new Widget();
+          }
           widget.setPortletId(portletInstanceId);
           widget = widgetService.createWidget(widget, identity.getRemoteId());
         }
@@ -99,6 +107,11 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
         ApplicationState state = applicationModel.getState();
         Portlet prefs = getLayoutService().load(state);
         prefs.setValue(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
+        Map<String, String> content = new HashMap<>();
+        content.put("html", widget.getHtml());
+        content.put("js", widget.getJs());
+        content.put("css", widget.getCss());
+        prefs.setValue(DATA_INIT_PREFERENCE_NAME, JsonUtils.toJsonString(content));
         layoutService.save(state, prefs);
       } catch (IllegalAccessException e) {
         throw new PortletException("User not allowed to change Widget settings", e);
