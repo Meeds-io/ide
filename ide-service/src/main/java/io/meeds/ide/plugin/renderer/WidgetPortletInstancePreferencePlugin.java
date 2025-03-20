@@ -18,7 +18,6 @@
  */
 package io.meeds.ide.plugin.renderer;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +65,7 @@ public class WidgetPortletInstancePreferencePlugin implements PortletInstancePre
     content.put("html", widget.getHtml());
     content.put("js", widget.getJs());
     content.put("css", widget.getCss());
-    return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, JsonUtils.toJsonString(content)));
+    return List.of(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, JsonUtils.toJsonString(content)),
+                   new PortletInstancePreference(WIDGET_ID_PARAM, String.valueOf(widget.getId())));
   }
 }
