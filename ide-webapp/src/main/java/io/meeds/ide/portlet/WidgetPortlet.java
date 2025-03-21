@@ -47,6 +47,7 @@ import io.meeds.ide.model.Widget;
 import io.meeds.ide.service.WidgetService;
 
 import static io.meeds.social.portlet.CMSPortlet.DATA_INIT_PREFERENCE_NAME;
+import static io.meeds.social.util.JsonUtils.fromJsonString;
 
 public class WidgetPortlet extends GenericDispatchedViewPortlet {
 
@@ -86,7 +87,7 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
 
   private void checkPreferences(RenderRequest request) throws PortletException {
     PortletPreferences preferences = request.getPreferences();
-    if (preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null) != null && preferences.getValue(WIDGET_ID_PARAM, null) == null) {
+    if (preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null) != null) {
       long portletInstanceId = Long.parseLong(preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null));
       Identity identity = Utils.getViewerIdentity();
       try {
@@ -95,6 +96,10 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
         if (widget == null) {
           widget = new Widget();
           widget.setPortletId(portletInstanceId);
+          Widget imported = fromJsonString(preferences.getValue(DATA_INIT_PREFERENCE_NAME, null), Widget.class);
+          widget.setJs(imported.getJs());
+          widget.setHtml(imported.getHtml());
+          widget.setCss(imported.getCss());
           widget = widgetService.createWidget(widget, identity.getRemoteId());
         }
         preferences.setValue(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
