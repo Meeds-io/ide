@@ -87,18 +87,19 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
 
   private void checkPreferences(RenderRequest request) throws PortletException {
     PortletPreferences preferences = request.getPreferences();
-    if (preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null) != null && preferences.getValue(WIDGET_ID_PARAM, null) == null) {
+    if (preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null) != null) {
       long portletInstanceId = Long.parseLong(preferences.getValue(PORTLET_INSTANCE_ID_PARAM, null));
       Identity identity = Utils.getViewerIdentity();
       try {
         WidgetService widgetService = ExoContainerContext.getService(WidgetService.class);
         Widget widget = widgetService.getWidgetByPortletId(portletInstanceId);
         if (widget == null) {
-          widget = fromJsonString(preferences.getValue(DATA_INIT_PREFERENCE_NAME, null), Widget.class);
-          if (widget == null) {
-            widget = new Widget();
-          }
+          widget = new Widget();
           widget.setPortletId(portletInstanceId);
+          Widget imported = fromJsonString(preferences.getValue(DATA_INIT_PREFERENCE_NAME, null), Widget.class);
+          widget.setJs(imported.getJs());
+          widget.setHtml(imported.getHtml());
+          widget.setCss(imported.getCss());
           widget = widgetService.createWidget(widget, identity.getRemoteId());
         }
         preferences.setValue(WIDGET_ID_PARAM, String.valueOf(widget.getId()));
