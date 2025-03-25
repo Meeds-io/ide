@@ -76,7 +76,7 @@ class WidgetPortletInstancePreferencePluginTest {
     Portlet preferences = new Portlet(map);
     List<PortletInstancePreference> generatedPreferences = widgetPortletInstancePreferencePlugin.generatePreferences(null, preferences);
     assertNotNull(generatedPreferences);
-    assertEquals(2, generatedPreferences.size());
+    assertEquals(1, generatedPreferences.size());
     assertEquals(DATA_PREF_NAME, generatedPreferences.getFirst().getName());
   }
 }

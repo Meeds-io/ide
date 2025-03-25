@@ -57,22 +57,15 @@ public class WidgetPortletInstancePreferencePlugin implements PortletInstancePre
   @Override
   @SneakyThrows
   public List<PortletInstancePreference> generatePreferences(Application application, Portlet preferences) {
-    if (preferences != null && preferences.getPreference(DATA_INIT_PREFERENCE_NAME) != null) {
-      return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME,
-                                                                     preferences.getPreference(DATA_INIT_PREFERENCE_NAME)
-                                                                                .getValue()));
-    } else {
-      long widgetId = 0L;
-      if (preferences != null) {
-        widgetId = Long.parseLong(preferences.getPreference(WIDGET_ID_PARAM).getValue());
-      }
-      Widget widget = widgetService.getWidget(widgetId);
-      Map<String, String> content = new HashMap<>();
-      content.put("html", widget.getHtml());
-      content.put("js", widget.getJs());
-      content.put("css", widget.getCss());
-      return List.of(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, JsonUtils.toJsonString(content)),
-                     new PortletInstancePreference(WIDGET_ID_PARAM, String.valueOf(widget.getId())));
+    long widgetId = 0L;
+    if (preferences != null) {
+      widgetId = Long.parseLong(preferences.getPreference(WIDGET_ID_PARAM).getValue());
     }
+    Widget widget = widgetService.getWidget(widgetId);
+    Map<String, String> content = new HashMap<>();
+    content.put("html", widget.getHtml());
+    content.put("js", widget.getJs());
+    content.put("css", widget.getCss());
+    return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, JsonUtils.toJsonString(content)));
   }
 }
