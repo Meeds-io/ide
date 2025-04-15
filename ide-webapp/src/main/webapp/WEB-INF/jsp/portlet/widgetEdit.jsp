@@ -4,7 +4,7 @@
   String[] widgetIdValues = (String[]) request.getAttribute("widgetId");
   String widgetId = widgetIdValues[0];
   String[] portletInstanceValues = (String[]) request.getAttribute("portletInstanceId");
-  String portletInstanceId = portletInstanceValues[0];
+  String portletInstanceId = (portletInstanceValues != null && portletInstanceValues.length > 0) ? portletInstanceValues[0] : null;
 %>
 <div class="VuetifyApp">
   <div data-app="true"

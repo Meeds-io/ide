@@ -71,10 +71,7 @@ public class WidgetService {
     if (!layoutAclService.isAdministrator(username)) {
       throw new IllegalAccessException(NOT_ADMINISTRATOR_USER);
     }
-    if (widget.getPortletId() == null || widget.getPortletId() == 0) {
-      throw new IllegalArgumentException("Widget portlet instance id is mandatory");
-    }
-    if (widgetStorage.existsByPortletInstanceId(widget.getPortletId())) {
+    if (widget.getPortletId() != null && widgetStorage.existsByPortletInstanceId(widget.getPortletId())) {
       throw new ObjectAlreadyExistsException(String.format("Widget for portlet with id %s already exists",
                                                            widget.getPortletId()));
     }
