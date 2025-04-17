@@ -79,7 +79,7 @@ class WidgetPortletInstancePreferencePluginTest {
                                                          widgetPortletInstancePreferencePlugin.generatePreferences(null,
                                                                                                                    preferences,
                                                                                                                    new PortletInstanceContext(false,
-                                                                                                                                              new HashMap<>()));
+                                                                                                                                              null));
     assertNotNull(generatedPreferences);
     assertEquals(1, generatedPreferences.size());
     assertEquals("name", generatedPreferences.getFirst().getName());
@@ -87,8 +87,7 @@ class WidgetPortletInstancePreferencePluginTest {
     // Export
     generatedPreferences = widgetPortletInstancePreferencePlugin.generatePreferences(null,
                                                                                      preferences,
-                                                                                     new PortletInstanceContext(true,
-                                                                                                                new HashMap<>()));
+                                                                                     new PortletInstanceContext(true, null));
     assertNotNull(generatedPreferences);
     assertEquals(2, generatedPreferences.size());
     assertEquals(DATA_PREF_NAME, generatedPreferences.getFirst().getName());

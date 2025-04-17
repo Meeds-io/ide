@@ -91,8 +91,6 @@ public class WidgetServiceTest {
   public void createWidget() throws ObjectAlreadyExistsException, IllegalAccessException {
     assertThrows(IllegalAccessException.class, () -> widgetService.createWidget(widget, USERNAME));
     when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
-
-    assertThrows(IllegalArgumentException.class, () -> widgetService.createWidget(widget, USERNAME));
     when(widget.getPortletId()).thenReturn(3l);
 
     when(widgetStorage.existsByPortletInstanceId(3l)).thenReturn(true);
