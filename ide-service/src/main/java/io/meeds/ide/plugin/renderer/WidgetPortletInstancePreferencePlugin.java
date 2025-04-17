@@ -61,8 +61,9 @@ public class WidgetPortletInstancePreferencePlugin implements PortletInstancePre
   public List<PortletInstancePreference> generatePreferences(Application application,
                                                              Portlet preferences,
                                                              PortletInstanceContext portletInstanceContext) {
-    if (portletInstanceContext.isExport()) {
-      if (preferences != null && preferences.getPreference(DATA_INIT_PREFERENCE_NAME) != null) {
+    if (portletInstanceContext != null && portletInstanceContext.isExport()) {
+      if (preferences != null && preferences.getPreference(DATA_INIT_PREFERENCE_NAME) != null
+          && preferences.getPreference(DATA_INIT_PREFERENCE_NAME).getValue() != null) {
         return Collections.singletonList(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME,
                                                                        preferences.getPreference(DATA_INIT_PREFERENCE_NAME)
                                                                                   .getValue()));
