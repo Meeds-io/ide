@@ -32,6 +32,7 @@ import javax.portlet.RenderResponse;
 import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet;
 import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.ApplicationState;
 import org.exoplatform.portal.mop.service.LayoutService;
@@ -55,6 +56,8 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
   private String              editDispatchedPath;
 
   private LayoutService       layoutService;
+
+  private UserACL             userAcl;
 
   @Override
   public void init(PortletConfig config) throws PortletException {
@@ -94,8 +97,7 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
           widget.setCss(imported.getCss());
         }
         WidgetService widgetService = ExoContainerContext.getService(WidgetService.class);
-        Identity identity = Utils.getViewerIdentity();
-        widget = widgetService.createWidget(widget, identity.getRemoteId());
+        widget = widgetService.createWidget(widget, getUserAcl().getSuperUser());
         String storageId = UIPortlet.getCurrentUIPortlet().getStorageId();
         Application applicationModel = getLayoutService().getApplicationModel(storageId);
         ApplicationState state = applicationModel.getState();
@@ -142,5 +144,12 @@ public class WidgetPortlet extends GenericDispatchedViewPortlet {
       layoutService = ExoContainerContext.getService(LayoutService.class);
     }
     return layoutService;
+  }
+
+  private UserACL getUserAcl() {
+    if (userAcl == null) {
+      userAcl = ExoContainerContext.getService(UserACL.class);
+    }
+    return userAcl;
   }
 }
