@@ -40,7 +40,7 @@ import org.exoplatform.portal.pom.spi.portlet.Portlet;
 import org.exoplatform.portal.pom.spi.portlet.Preference;
 
 import io.meeds.layout.model.PortletInstancePreference;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest(classes = { WidgetPortletInstancePreferencePlugin.class, })
 @ExtendWith(MockitoExtension.class)
@@ -52,7 +52,7 @@ class WidgetPortletInstancePreferencePluginTest {
 
   private static final String                   SETTING_NAME        = "name";
 
-  @MockBean
+  @MockitoBean
   private WidgetService                         widgetService;
 
   @Autowired
