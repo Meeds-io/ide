@@ -36,7 +36,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import io.meeds.ide.dao.WidgetDAO;
 import io.meeds.ide.entity.WidgetEntity;
@@ -59,7 +59,7 @@ public class WidgetStorageTest {
 
   private static final LocalDateTime MODIFIED_DATE = LocalDate.of(2024, 8, 22).atStartOfDay().minusHours(16);
 
-  @MockBean
+  @MockitoBean
   private WidgetDAO                  widgetDAO;
 
   @Autowired

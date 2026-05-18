@@ -37,7 +37,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -59,19 +59,19 @@ class StaticResourceServiceTest {
 
   private static final String            SITE_NAME = "siteName";
 
-  @MockBean
+  @MockitoBean
   private LayoutAclService               layoutAclService;
 
-  @MockBean
+  @MockitoBean
   private IdentityManager                identityManager;
 
-  @MockBean
+  @MockitoBean
   private ListenerService                listenerService;
 
-  @MockBean
+  @MockitoBean
   private WidgetStorage                  widgetStorage;
 
-  @MockBean
+  @MockitoBean
   private UserPortalConfigService        userPortalConfigService;
 
   @Autowired

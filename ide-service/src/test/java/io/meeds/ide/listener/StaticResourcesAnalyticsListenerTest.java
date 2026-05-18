@@ -31,7 +31,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.TestPropertySource;
 
 import org.exoplatform.services.listener.Event;
@@ -47,10 +47,10 @@ import java.util.Map;
 @TestPropertySource(properties = { "spring.profiles.active=layout", })
 class StaticResourcesAnalyticsListenerTest {
 
-  @MockBean
+  @MockitoBean
   private ListenerService                  listenerService;
 
-  @MockBean
+  @MockitoBean
   private Event<String, Widget>            event;
 
   @Mock
