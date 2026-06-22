@@ -62,8 +62,8 @@ public class StaticResourcesAnalyticsListener extends Listener<String, Widget> {
     statisticData.setSubModule("layout");
     statisticData.setOperation("addStatisticResource");
     statisticData.setUserId(widget.getCreatorId());
-    statisticData.addParameter(SITE_NAME, widget.getProperties().get(SITE_NAME));
-    statisticData.addParameter(STATISTICS_TYPE_PARAM, widget.getType());
+    statisticData.addKeyword(SITE_NAME, widget.getProperties().get(SITE_NAME));
+    statisticData.addKeyword(STATISTICS_TYPE_PARAM, widget.getType());
     addStatisticData(statisticData);
   }
 }
