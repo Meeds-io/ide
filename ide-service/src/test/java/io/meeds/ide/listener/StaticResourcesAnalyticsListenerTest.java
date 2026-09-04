@@ -21,39 +21,41 @@ package io.meeds.ide.listener;
 import static io.meeds.analytics.utils.AnalyticsUtils.addStatisticData;
 import static io.meeds.ide.service.StaticResourceService.SITE_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
-import io.meeds.ide.constant.WidgetType;
-import io.meeds.ide.model.Widget;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.ListenerService;
 
 import io.meeds.analytics.model.StatisticData;
 import io.meeds.analytics.utils.AnalyticsUtils;
-
-import java.util.HashMap;
-import java.util.Map;
+import io.meeds.ide.constant.WidgetType;
+import io.meeds.ide.model.Widget;
 
 @SpringBootTest(classes = { StaticResourcesAnalyticsListener.class, })
 @TestPropertySource(properties = { "spring.profiles.active=layout", })
 class StaticResourcesAnalyticsListenerTest {
 
-  @MockBean
+  @MockitoBean
   private ListenerService                  listenerService;
 
-  @MockBean
+  @MockitoBean
   private Event<String, Widget>            event;
 
-  @Mock
+  @MockitoBean
   private Widget                           widget;
 
   @Autowired
