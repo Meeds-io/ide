@@ -158,7 +158,7 @@ public class WidgetService {
    *           longer exists
    */
   public ApplicationCode readWidgetCodeOnApplication(ApplicationSettingsContext context) throws ObjectNotFoundException {
-    Widget widget = sourceWidget(context.getPreferences());
+    Widget widget = sourceWidget(context.getPreferences(), context.getUsername());
     return widget == null ? null : new ApplicationCode(widget.getHtml(), widget.getCss(), widget.getJs());
   }
 
@@ -207,7 +207,7 @@ public class WidgetService {
         current.setJs(js == null ? current.getJs() : js);
         return updateWidget(current, username);
       }
-      Widget source = current == null ? sourceWidget(context.getPreferences()) : current;
+      Widget source = current == null ? sourceWidget(context.getPreferences(), username) : readableOrNull(current, username);
       Widget copy = new Widget();
       copy.setHtml(html == null && source != null ? source.getHtml() : html);
       copy.setCss(css == null && source != null ? source.getCss() : css);
@@ -297,13 +297,18 @@ public class WidgetService {
            && StringUtils.equals(widget.getProperties().get(OWNER_LAYOUT_PROPERTY), liveLayoutKey);
   }
 
-  private Widget sourceWidget(Map<String, String> preferences) throws ObjectNotFoundException {
+  /**
+   * The widget a window's code comes from, read as the user: an unpublished
+   * copy the user may not edit the layout of reads as no code, so a widgetId
+   * preference forged on another layout's window leaks nothing
+   */
+  private Widget sourceWidget(Map<String, String> preferences, String username) throws ObjectNotFoundException {
     if (preferences == null) {
       return null;
     }
     String widgetId = preferences.get(WIDGET_ID_PREFERENCE);
     if (NumberUtils.isDigits(widgetId)) {
-      return getWidget(Long.parseLong(widgetId));
+      return readableOrNull(getWidget(Long.parseLong(widgetId)), username);
     }
     String dataInit = preferences.get(DATA_INIT_PREFERENCE);
     if (StringUtils.isNotBlank(dataInit)) {
@@ -314,6 +319,14 @@ public class WidgetService {
     }
     String portletInstanceId = preferences.get(PORTLET_INSTANCE_ID_PREFERENCE);
     return NumberUtils.isDigits(portletInstanceId) ? getWidgetByPortletId(Long.parseLong(portletInstanceId)) : null;
+  }
+
+  private Widget readableOrNull(Widget widget, String username) {
+    if (isDraftCopy(widget) && !canEditOwnerLayout(widget, username)) {
+      LOG.debug("Widget {} is an unpublished copy {} may not read: no code taken from it", widget.getId(), username);
+      return null;
+    }
+    return widget;
   }
 
   private Widget widgetOf(String widgetId) {

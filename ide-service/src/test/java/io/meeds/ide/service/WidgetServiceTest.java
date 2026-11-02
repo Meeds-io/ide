@@ -375,6 +375,30 @@ public class WidgetServiceTest {
     verify(widgetStorage, times(1)).updateWidget(any());
   }
 
+  @Test
+  public void anUnpublishedCopyForgedOnAnotherWindowReadsAsNoCodeAndIsNeverCopiedFrom() throws Exception {
+    Widget foreign = copy(7L, "portal::other::page", "99");
+    foreign.setHtml(HTML_CONTENT);
+    when(widgetStorage.getWidget(7L)).thenReturn(foreign);
+
+    assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "7"))));
+    when(layoutAclService.canEditPage(PageKey.parse("portal::other::page"), USERNAME)).thenReturn(true);
+    assertEquals(new ApplicationCode(HTML_CONTENT, null, null), widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "7"))));
+    when(layoutAclService.canEditPage(PageKey.parse("portal::other::page"), USERNAME)).thenReturn(false);
+
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "7"));
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> i.getArgument(0));
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, "b{}", null, USERNAME);
+
+    assertNull(result.getHtml());
+    assertEquals("b{}", result.getCss());
+    verify(widgetStorage, never()).updateWidget(any());
+  }
+
   private Widget copy(long id, String ownerLayout, String ownerWindow) {
     Widget copy = new Widget();
     copy.setId(id);
