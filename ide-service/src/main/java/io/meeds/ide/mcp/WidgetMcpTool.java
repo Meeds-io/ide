@@ -59,6 +59,8 @@ public class WidgetMcpTool implements McpToolPlugin {
 
   public static final String      APPLICATION_ID_NOT_ACCEPTED = ApplicationDraftService.APPLICATION_ID_NOT_ACCEPTED;
 
+  public static final String      APPLICATION_NOT_FOUND       = ApplicationDraftService.APPLICATION_NOT_FOUND;
+
   public static final String      HTML_NOT_ACCEPTED           = "value is not accepted for html";
 
   public static final String      CSS_NOT_ACCEPTED            = "value is not accepted for css";
@@ -157,6 +159,9 @@ public class WidgetMcpTool implements McpToolPlugin {
       return widgetService.updateWidgetCodeOnApplication(window, liveLayoutKey, html, css, js, username);
     } catch (IllegalAccessException e) {
       throw new IllegalAccessException(ADMINISTRATORS_ONLY);
+    } catch (ObjectNotFoundException e) {
+      LOG.debug("Window {} or its widget disappeared while {} wrote its code", window.getApplicationId(), username, e);
+      throw new ObjectNotFoundException(APPLICATION_NOT_FOUND);
     } catch (IllegalStateException e) {
       if (StringUtils.equals(e.getMessage(), WidgetService.LAYOUT_BUSY)) {
         throw e;

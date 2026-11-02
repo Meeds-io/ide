@@ -241,6 +241,10 @@ public class WidgetMcpToolTest {
                                                                   .updateWidgetCodeOnApplication(any(), any(), any(), any(), any(), any());
     assertEquals(WidgetMcpTool.WIDGET_CODE_NOT_SAVED,
                  assertThrows(IllegalStateException.class, () -> tool.updateWidgetCode(null, PAGE_REF, "20", "<b/>", null, null)).getMessage());
+    doThrow(new ObjectNotFoundException("Application with id 21 wasn't found in page portal::test::home_draft_john")).when(widgetService)
+                                                                                                                  .updateWidgetCodeOnApplication(any(), any(), any(), any(), any(), any());
+    assertEquals(WidgetMcpTool.APPLICATION_NOT_FOUND,
+                 assertThrows(ObjectNotFoundException.class, () -> tool.updateWidgetCode(null, PAGE_REF, "20", "<b/>", null, null)).getMessage());
     doThrow(new NullPointerException("engine")).when(widgetService).updateWidgetCodeOnApplication(any(), any(), any(), any(), any(), any());
     assertEquals(WidgetMcpTool.WIDGET_CODE_NOT_SAVED,
                  assertThrows(IllegalStateException.class, () -> tool.updateWidgetCode(null, PAGE_REF, "20", "<b/>", null, null)).getMessage());
