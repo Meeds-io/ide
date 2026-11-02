@@ -1,0 +1,47 @@
+{
+  "tools": [
+    {
+      "name": "update_widget_code",
+      "title": "Write the code of an IDE widget placed on a layout",
+      "description": "Write the HTML, CSS and JavaScript of an IDE widget placed on a page or in a site container, in the current user's draft: a branded banner, a KPI tile, a custom form. Exactly one of page_ref and site_id names the layout; application_id is the id get_page_layout or get_site returned for the widget's window (the user's draft when they have one, the published layout otherwise); any other application, a section, a cell or a container is refused. Each of html, css and js replaces that part of the widget's code; a part omitted or null is kept; at least one is given; each is limited to the configured size (1 MB by default). Reserved to platform administrators, as the widget editor is, because the code runs in every visitor's browser; the user must also be able to edit the page or the site. The code is part of the draft: on the first write of a draft session the widget shared with the published layout is copied for the draft window, which then points at its own copy, and the published layout keeps rendering the previous code until publish_layout; discard_layout_draft starts again from the published layout; an unpublished copy is readable by the layout's editors only. The first draft of a page needs the right to edit the site's navigation, as opening the editor does. This write is one of the delivery's declared exceptions to all-or-nothing: the copy is created, then the window is pointed at it; when that second step fails the copy is deleted and the window keeps its previous code. Returns the window's application_id on the draft, the widget_id it now renders, the three parts of its code and draft_created; when draft_created is true, read the layout again for its ids.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "page_ref": {
+            "type": "string",
+            "description": "The page reference as get_page_layout and list_site_pages answer it (type::site::page), for a widget placed on a page; omit when site_id is given"
+          },
+          "site_id": {
+            "type": "integer",
+            "description": "The site id as list_sites and get_site answer it, for a widget placed in a site container; omit when page_ref is given"
+          },
+          "application_id": {
+            "type": "string",
+            "description": "The application_id of the widget's window, as get_page_layout or get_site answered it"
+          },
+          "html": {
+            "type": "string",
+            "description": "The widget's HTML, replacing the current one; omit to keep it"
+          },
+          "css": {
+            "type": "string",
+            "description": "The widget's CSS, replacing the current one; omit to keep it"
+          },
+          "js": {
+            "type": "string",
+            "description": "The widget's JavaScript, replacing the current one, run in every visitor's browser once published; omit to keep it"
+          }
+        },
+        "required": [
+          "application_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    }
+  ]
+}

@@ -8,8 +8,13 @@
 <%
   String[] widgetIdValues = (String[]) request.getAttribute("widgetId");
   String widgetId = widgetIdValues[0];
-  Widget widget = ExoContainerContext.getService(WidgetService.class)
-      .getWidget(Long.parseLong(widgetId));
+  Widget widget = null;
+  try {
+    widget = ExoContainerContext.getService(WidgetService.class)
+        .getWidget(Long.parseLong(widgetId), request.getRemoteUser());
+  } catch (IllegalAccessException e) {
+    widget = null;
+  }
   if (widget != null) {
     long widgetLastModified = widget.getModifiedDate()
        .toEpochSecond(ZoneOffset.UTC);
