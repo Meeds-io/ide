@@ -19,6 +19,7 @@
 package io.meeds.ide.rest;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -46,7 +47,10 @@ import jakarta.servlet.http.HttpServletRequest;
 @Tag(name = "/ide/rest/widgets", description = "Managing Web Application Widgets")
 public class WidgetRest {
 
-  private static final CacheControl CACHE_CONTROL = CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic();
+  private static final CacheControl CACHE_CONTROL         = CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic();
+
+  /** Every answer about an unpublished copy, the editor's 200 and the 404 alike */
+  private static final CacheControl PRIVATE_CACHE_CONTROL = CacheControl.noStore().cachePrivate();
 
   @Autowired
   private WidgetService             widgetService;
@@ -57,15 +61,12 @@ public class WidgetRest {
     @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "404", description = "Widget not found"),
   })
-  public Widget getWidget(
-                          @Parameter(description = "Widget identifier")
-                          @PathVariable("id")
-                          long id) {
-    try {
-      return widgetService.getWidget(id);
-    } catch (ObjectNotFoundException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-    }
+  public ResponseEntity<Widget> getWidget(
+                                          HttpServletRequest request,
+                                          @Parameter(description = "Widget identifier")
+                                          @PathVariable("id")
+                                          long id) {
+    return serve(request, id, widget -> widget, null);
   }
 
   @GetMapping("{id}/html")
@@ -79,15 +80,7 @@ public class WidgetRest {
                                               @Parameter(description = "Widget identifier")
                                               @PathVariable("id")
                                               long id) {
-    try {
-      Widget widget = widgetService.getWidget(id);
-      return ResponseEntity.ok()
-                           .cacheControl(CACHE_CONTROL)
-                           .contentType(MediaType.TEXT_HTML)
-                           .body(widget.getHtml());
-    } catch (ObjectNotFoundException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-    }
+    return serve(request, id, Widget::getHtml, MediaType.TEXT_HTML);
   }
 
   @GetMapping("{id}/css")
@@ -97,19 +90,11 @@ public class WidgetRest {
     @ApiResponse(responseCode = "404", description = "Widget not found"),
   })
   public ResponseEntity<String> getWidgetCss(
-                                             HttpServletRequest request,
-                                             @Parameter(description = "Widget identifier")
-                                             @PathVariable("id")
-                                             long id) {
-    try {
-      Widget widget = widgetService.getWidget(id);
-      return ResponseEntity.ok()
-                           .cacheControl(CACHE_CONTROL)
-                           .contentType(MediaType.parseMediaType("text/css"))
-                           .body(widget.getCss());
-    } catch (ObjectNotFoundException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-    }
+                                              HttpServletRequest request,
+                                              @Parameter(description = "Widget identifier")
+                                              @PathVariable("id")
+                                              long id) {
+    return serve(request, id, Widget::getCss, MediaType.parseMediaType("text/css"));
   }
 
   @GetMapping("{id}/js")
@@ -119,18 +104,36 @@ public class WidgetRest {
     @ApiResponse(responseCode = "404", description = "Widget not found"),
   })
   public ResponseEntity<String> getWidgetJs(
-                                            HttpServletRequest request,
-                                            @Parameter(description = "Widget identifier")
-                                            @PathVariable("id")
-                                            long id) {
+                                              HttpServletRequest request,
+                                              @Parameter(description = "Widget identifier")
+                                              @PathVariable("id")
+                                              long id) {
+    return serve(request, id, widget -> "(function() {" + widget.getJs() + "})()", MediaType.parseMediaType("text/javascript"));
+  }
+
+  /**
+   * Serves a widget read: a published widget as today, with the public
+   * year-long cache; an unpublished copy to the editors of its layout only,
+   * every answer about it, the 200 and the 404 alike, private and not
+   * stored, and refused as 404 to anyone else; an unknown id answers the
+   * same empty, private 404, so that no answer confirms an id exists
+   */
+  private <T> ResponseEntity<T> serve(HttpServletRequest request, long id, Function<Widget, T> body, MediaType mediaType) {
     try {
-      Widget widget = widgetService.getWidget(id);
-      return ResponseEntity.ok()
-                           .cacheControl(CACHE_CONTROL)
-                           .contentType(MediaType.parseMediaType("text/javascript"))
-                           .body("(function() {"+ widget.getJs() +"})()");
-    } catch (ObjectNotFoundException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+      Widget widget = widgetService.getWidget(id, request.getRemoteUser());
+      boolean draftCopy = widgetService.isDraftCopy(widget);
+      ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+      if (draftCopy) {
+        response.cacheControl(PRIVATE_CACHE_CONTROL);
+      } else if (mediaType != null) {
+        response.cacheControl(CACHE_CONTROL);
+      }
+      if (mediaType != null) {
+        response.contentType(mediaType);
+      }
+      return response.body(body.apply(widget));
+    } catch (IllegalAccessException | ObjectNotFoundException e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).cacheControl(PRIVATE_CACHE_CONTROL).build();
     }
   }
 
