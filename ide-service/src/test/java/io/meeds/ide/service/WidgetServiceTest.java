@@ -228,7 +228,7 @@ public class WidgetServiceTest {
 
   @Test
   public void aSharedWidgetIsCopiedForTheDraftWindowAndTheWindowPointedAtTheCopyInOneWrite() throws Exception {
-    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "5", "data.init", "{}"));
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "5"));
     Widget shared = new Widget();
     shared.setId(5L);
     shared.setHtml(HTML_CONTENT);
@@ -421,6 +421,10 @@ public class WidgetServiceTest {
     when(widgetStorage.getWidget(7L)).thenReturn(foreign);
 
     assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "7"))));
+    Widget instance = new Widget();
+    instance.setJs(JS_CONTENT);
+    when(widgetStorage.getWidgetByPortletId(3L)).thenReturn(instance);
+    assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "7", "portletInstanceId", "3"))));
     when(layoutAclService.canEditPage(PageKey.parse("portal::other::page"), USERNAME)).thenReturn(true);
     assertEquals(new ApplicationCode(HTML_CONTENT, null, null), widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "7"))));
     when(layoutAclService.canEditPage(PageKey.parse("portal::other::page"), USERNAME)).thenReturn(false);
@@ -457,6 +461,34 @@ public class WidgetServiceTest {
 
     assertEquals(33L, result.getId());
     assertEquals(HTML_CONTENT, result.getHtml());
+    assertEquals("z()", result.getJs());
+  }
+
+  @Test
+  public void aNeverRenderedWindowCarryingBothPreferencesIsReadAndCopiedFromItsDataInitAsItRenders() throws Exception {
+    Widget other = new Widget();
+    other.setId(5L);
+    other.setHtml("<old/>");
+    other.setCss("old{}");
+    when(widgetStorage.getWidget(5L)).thenReturn(other);
+    String dataInit = "{\"html\":\"<i/>\",\"css\":\"i{}\",\"js\":\"y()\"}";
+    assertEquals(new ApplicationCode("<i/>", "i{}", "y()"),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "5", "data.init", dataInit))));
+    assertEquals(new ApplicationCode(null, null, null),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "5", "data.init", ""))));
+    assertEquals(new ApplicationCode(null, null, null),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "5", "data.init", "null"))));
+
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "5", "data.init", dataInit));
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> i.getArgument(0));
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, null, "z()", USERNAME);
+
+    assertEquals("<i/>", result.getHtml());
+    assertEquals("i{}", result.getCss());
     assertEquals("z()", result.getJs());
   }
 

@@ -148,13 +148,18 @@ public class WidgetService {
   }
 
   /**
-   * The code a window renders, as the layout reads describe it: the widget
-   * its preference names, else (no widgetId, or one naming a deleted widget)
-   * the code a never-rendered window carries in its data.init preference,
-   * else the catalog instance's widget, else none
+   * The code a window renders, as the layout reads describe it: the code a
+   * never-rendered window carries in its data.init preference (an empty
+   * code, three null parts, when it is blank or holds no code, as the render
+   * builds an empty widget from it), else the widget its widgetId names, else
+   * the catalog instance's widget (also for a widgetId naming a deleted
+   * widget), else none
    *
    * @param context the window
-   * @return the code, null when the window has none yet
+   * @return the code; null when the window has none: no data.init, and no
+   *         widgetId naming a widget and no catalog instance widget, or a
+   *         widgetId naming an unpublished copy the user may not read, which
+   *         stops the read with no fallback
    */
   public ApplicationCode readWidgetCodeOnApplication(ApplicationSettingsContext context) {
     Widget widget = sourceWidget(context.getPreferences(), context.getUsername());
@@ -206,7 +211,7 @@ public class WidgetService {
         current.setJs(js == null ? current.getJs() : js);
         return updateWidget(current, username);
       }
-      Widget source = current == null ? sourceWidget(context.getPreferences(), username) : readableOrNull(current, username);
+      Widget source = sourceWidget(context.getPreferences(), username);
       Widget copy = new Widget();
       copy.setHtml(html == null && source != null ? source.getHtml() : html);
       copy.setCss(css == null && source != null ? source.getCss() : css);
@@ -313,24 +318,28 @@ public class WidgetService {
   }
 
   /**
-   * The widget a window's code comes from, read as the user: an unpublished
-   * copy the user may not edit the layout of reads as no code, so a widgetId
-   * preference forged on another layout's window leaks nothing
+   * The widget a window's code comes from, in the order the portlet renders
+   * it: a data.init the window still carries, blank or not (its first render
+   * builds the widget from it, an empty one when it holds no code, whatever
+   * widgetId holds), else the widget its widgetId names, else the catalog
+   * instance's widget; unlike the render, a widgetId naming a deleted widget
+   * also falls back to the catalog instance, so the tool can repair the
+   * window. Read as the user: an
+   * unpublished copy the user may not edit the layout of reads as no code,
+   * so a widgetId preference forged on another layout's window leaks nothing
    */
   private Widget sourceWidget(Map<String, String> preferences, String username) {
     if (preferences == null) {
       return null;
     }
+    String dataInit = preferences.get(DATA_INIT_PREFERENCE);
+    if (dataInit != null) {
+      Widget imported = StringUtils.isBlank(dataInit) ? null : JsonUtils.fromJsonString(dataInit, Widget.class);
+      return imported == null ? new Widget() : imported;
+    }
     Widget referenced = widgetOf(preferences.get(WIDGET_ID_PREFERENCE));
     if (referenced != null) {
       return readableOrNull(referenced, username);
-    }
-    String dataInit = preferences.get(DATA_INIT_PREFERENCE);
-    if (StringUtils.isNotBlank(dataInit)) {
-      Widget imported = JsonUtils.fromJsonString(dataInit, Widget.class);
-      if (imported != null) {
-        return imported;
-      }
     }
     String portletInstanceId = preferences.get(PORTLET_INSTANCE_ID_PREFERENCE);
     return NumberUtils.isDigits(portletInstanceId) ? getWidgetByPortletId(Long.parseLong(portletInstanceId)) : null;

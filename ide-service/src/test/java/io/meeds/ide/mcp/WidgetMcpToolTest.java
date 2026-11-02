@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.portal.config.model.PortalConfig;
@@ -145,6 +146,8 @@ public class WidgetMcpToolTest {
     assertEquals(WidgetMcpTool.PAGE_REF_NOT_ACCEPTED,
                  assertThrows(IllegalArgumentException.class, () -> tool.updateWidgetCode(null, "home", "20", "<b/>", null, null)).getMessage());
     String tooLong = "x".repeat((int) WidgetMcpTool.DEFAULT_MAX_BYTES + 1);
+    assertEquals(WidgetMcpTool.HTML_NOT_ACCEPTED,
+                 assertThrows(IllegalArgumentException.class, () -> tool.updateWidgetCode(null, PAGE_REF, "20", tooLong, null, null)).getMessage());
     assertEquals(WidgetMcpTool.CSS_NOT_ACCEPTED,
                  assertThrows(IllegalArgumentException.class, () -> tool.updateWidgetCode(null, PAGE_REF, "20", null, tooLong, null)).getMessage());
     assertEquals(WidgetMcpTool.JS_NOT_ACCEPTED,
@@ -256,6 +259,18 @@ public class WidgetMcpToolTest {
 
     assertEquals(String.format(ApplicationDraftService.DRAFT_CREATED_BEFORE_FAILURE, WidgetMcpTool.WIDGET_CODE_NOT_SAVED),
                  assertThrows(IllegalStateException.class, () -> tool.updateWidgetCode(null, PAGE_REF, "20", "<b/>", null, null)).getMessage());
+  }
+
+  @Test
+  public void theConfiguredSizeReplacesTheDefaultCap() {
+    ReflectionTestUtils.setField(tool, "codeMaxBytes", 4L);
+    try {
+      assertEquals(WidgetMcpTool.JS_NOT_ACCEPTED,
+                   assertThrows(IllegalArgumentException.class, () -> tool.updateWidgetCode(null, PAGE_REF, "20", null, null, "12345")).getMessage());
+      verifyNoInteractions(draftService, widgetService);
+    } finally {
+      ReflectionTestUtils.setField(tool, "codeMaxBytes", 0L);
+    }
   }
 
   private DraftWindows pageWindows(PageKey draftKey, ApplicationSettingsContext window) {
