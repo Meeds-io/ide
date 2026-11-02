@@ -18,7 +18,10 @@
  */
 package io.meeds.ide.rest;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -127,28 +130,28 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetAnonymouslyWhenNotFound() throws Exception {
-    when(widgetService.getWidget(2l)).thenThrow(ObjectNotFoundException.class);
+    when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2"));
     response.andExpect(status().isNotFound());
   }
 
   @Test
   void getWidgetAnonymously() throws Exception {
-    when(widgetService.getWidget(2l)).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2"));
     response.andExpect(status().isOk());
   }
 
   @Test
   void getWidgetHtmlAnonymouslyWhenNotFound() throws Exception {
-    when(widgetService.getWidget(2l)).thenThrow(ObjectNotFoundException.class);
+    when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/html"));
     response.andExpect(status().isNotFound());
   }
 
   @Test
   void getWidgetHtmlAnonymously() throws Exception {
-    when(widgetService.getWidget(2l)).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
     when(widget.getHtml()).thenReturn(HTML_CONTENT);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/html"));
     response.andExpect(status().isOk())
@@ -158,14 +161,14 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetCssAnonymouslyWhenNotFound() throws Exception {
-    when(widgetService.getWidget(2l)).thenThrow(ObjectNotFoundException.class);
+    when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/css"));
     response.andExpect(status().isNotFound());
   }
 
   @Test
   void getWidgetCssAnonymously() throws Exception {
-    when(widgetService.getWidget(2l)).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
     when(widget.getCss()).thenReturn(CSS_CONTENT);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/css"));
     response.andExpect(status().isOk())
@@ -175,14 +178,14 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetJsAnonymouslyWhenNotFound() throws Exception {
-    when(widgetService.getWidget(2l)).thenThrow(ObjectNotFoundException.class);
+    when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/js"));
     response.andExpect(status().isNotFound());
   }
 
   @Test
   void getWidgetJsAnonymously() throws Exception {
-    when(widgetService.getWidget(2l)).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
     when(widget.getJs()).thenReturn(JS_CONTENT);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/js"));
     response.andExpect(status().isOk())
@@ -268,6 +271,46 @@ public class WidgetRestTest {
   @SneakyThrows
   String asJsonString(final Object obj) {
     return OBJECT_MAPPER.writeValueAsString(obj);
+  }
+
+  @Test
+  void anUnpublishedCopyIsRefusedAsNotFoundToAViewerWithAPrivateUnstoredAnswer() throws Exception {
+    when(widgetService.getWidget(eq(2l), any())).thenThrow(IllegalAccessException.class);
+    for (String path : new String[] { "/2", "/2/html", "/2/css", "/2/js" }) {
+      mockMvc.perform(get(REST_PATH + path).with(testSimpleUser()))
+             .andExpect(status().isNotFound())
+             .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
+             .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("private")));
+    }
+  }
+
+  @Test
+  void anUnpublishedCopyIsServedToItsEditorPrivateAndUnstored() throws Exception {
+    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
+    when(widgetService.isDraftCopy(widget)).thenReturn(true);
+    when(widget.getJs()).thenReturn(JS_CONTENT);
+    mockMvc.perform(get(REST_PATH + "/2/js").with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(content().string("(function() {" + JS_CONTENT + "})()"))
+           .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
+           .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("private")))
+           .andExpect(header().string(HttpHeaders.CACHE_CONTROL, not(containsString("max-age"))));
+    mockMvc.perform(get(REST_PATH + "/2").with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")));
+  }
+
+  @Test
+  void aPublishedWidgetKeepsItsPublicYearLongCache() throws Exception {
+    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
+    when(widget.getJs()).thenReturn(JS_CONTENT);
+    mockMvc.perform(get(REST_PATH + "/2/js"))
+           .andExpect(status().isOk())
+           .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("max-age=31536000")))
+           .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("public")));
+    mockMvc.perform(get(REST_PATH + "/2"))
+           .andExpect(status().isOk())
+           .andExpect(header().doesNotExist(HttpHeaders.CACHE_CONTROL));
   }
 
 }
