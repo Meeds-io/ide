@@ -19,6 +19,7 @@
 package io.meeds.ide.plugin.renderer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
@@ -92,4 +93,27 @@ class WidgetPortletInstancePreferencePluginTest {
     assertEquals(2, generatedPreferences.size());
     assertEquals(DATA_PREF_NAME, generatedPreferences.getFirst().getName());
   }
+
+  @Test
+  void anUnpublishedCopyIsExportedAsAnEmptyWidgetWithNoWidgetId() throws ObjectNotFoundException {
+    Map<String, Preference> map = new HashMap<>();
+    map.put(WIDGET_ID_PREF_NAME, new Preference(SETTING_NAME, "1", false));
+    Widget copy = new Widget();
+    copy.setId(1L);
+    copy.setHtml("Html");
+    copy.setJs("Js");
+    when(widgetService.getWidget(1L)).thenReturn(copy);
+    when(widgetService.isDraftCopy(copy)).thenReturn(true);
+
+    List<PortletInstancePreference> exported = widgetPortletInstancePreferencePlugin.generatePreferences(null,
+                                                                                                        new Portlet(map),
+                                                                                                        new PortletInstanceContext(true,
+                                                                                                                                   null));
+
+    assertEquals(1, exported.size());
+    assertEquals(DATA_PREF_NAME, exported.getFirst().getName());
+    assertFalse(exported.getFirst().getValue().contains("Html"));
+    assertFalse(exported.getFirst().getValue().contains("Js"));
+  }
+
 }
