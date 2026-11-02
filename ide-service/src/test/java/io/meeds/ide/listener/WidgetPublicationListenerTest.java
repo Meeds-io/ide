@@ -81,7 +81,7 @@ public class WidgetPublicationListenerTest {
 
     listener.onEvent(new Event<>(PageLayoutService.PAGE_PUBLISHED_EVENT, "john", PAGE_REF));
 
-    verify(widgetService).publishDraftCopies(PAGE_REF, page);
+    verify(widgetService).publishDraftCopies(PAGE_REF, page, "john");
   }
 
   @Test
@@ -94,17 +94,17 @@ public class WidgetPublicationListenerTest {
 
     listener.onEvent(new Event<>(SiteLayoutService.SITE_PUBLISHED_EVENT, "john", siteKey));
 
-    verify(widgetService).publishDraftCopies("portal::test", layout);
+    verify(widgetService).publishDraftCopies("portal::test", layout, "john");
   }
 
   @Test
   public void aFailureToMarkTheCopiesNeverAbortsThePublication() {
     when(layoutService.getPage(PageKey.parse(PAGE_REF))).thenReturn(mock(Page.class));
-    doThrow(new IllegalStateException("engine")).when(widgetService).publishDraftCopies(eq(PAGE_REF), any());
+    doThrow(new IllegalStateException("engine")).when(widgetService).publishDraftCopies(eq(PAGE_REF), any(), any());
 
     assertDoesNotThrow(() -> listener.onEvent(new Event<>(PageLayoutService.PAGE_PUBLISHED_EVENT, "john", PAGE_REF)));
     assertDoesNotThrow(() -> listener.onEvent(new Event<>(PageLayoutService.PAGE_PUBLISHED_EVENT, "john", 42L)));
-    verify(widgetService, never()).publishDraftCopies(eq("42"), any());
+    verify(widgetService, never()).publishDraftCopies(eq("42"), any(), any());
   }
 
 }

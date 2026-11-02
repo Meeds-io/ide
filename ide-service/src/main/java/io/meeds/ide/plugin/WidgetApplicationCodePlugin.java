@@ -20,8 +20,6 @@ package io.meeds.ide.plugin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import org.exoplatform.commons.exception.ObjectNotFoundException;
-
 import io.meeds.ide.service.WidgetService;
 import io.meeds.layout.model.ApplicationCode;
 import io.meeds.layout.model.ApplicationSettingsContext;
@@ -58,7 +56,7 @@ public class WidgetApplicationCodePlugin implements ApplicationCodePlugin {
   }
 
   @Override
-  public ApplicationCode read(ApplicationSettingsContext context) throws ObjectNotFoundException, IllegalAccessException {
+  public ApplicationCode read(ApplicationSettingsContext context) {
     return widgetService.readWidgetCodeOnApplication(context);
   }
 

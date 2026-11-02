@@ -115,8 +115,8 @@ public class WidgetRest {
    * Serves a widget read: a published widget as today, with the public
    * year-long cache; an unpublished copy to the editors of its layout only,
    * every answer about it, the 200 and the 404 alike, private and not
-   * stored, and refused as 404 to anyone else so that its id is not
-   * confirmed
+   * stored, and refused as 404 to anyone else; an unknown id answers the
+   * same empty, private 404, so that no answer confirms an id exists
    */
   private <T> ResponseEntity<T> serve(HttpServletRequest request, long id, Function<Widget, T> body, MediaType mediaType) {
     try {
@@ -132,10 +132,8 @@ public class WidgetRest {
         response.contentType(mediaType);
       }
       return response.body(body.apply(widget));
-    } catch (IllegalAccessException e) {
+    } catch (IllegalAccessException | ObjectNotFoundException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).cacheControl(PRIVATE_CACHE_CONTROL).build();
-    } catch (ObjectNotFoundException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
     }
   }
 

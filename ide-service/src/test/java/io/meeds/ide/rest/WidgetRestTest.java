@@ -132,7 +132,9 @@ public class WidgetRestTest {
   void getWidgetAnonymouslyWhenNotFound() throws Exception {
     when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2"));
-    response.andExpect(status().isNotFound());
+    response.andExpect(status().isNotFound())
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
+            .andExpect(content().string(""));
   }
 
   @Test
@@ -146,7 +148,9 @@ public class WidgetRestTest {
   void getWidgetHtmlAnonymouslyWhenNotFound() throws Exception {
     when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/html"));
-    response.andExpect(status().isNotFound());
+    response.andExpect(status().isNotFound())
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
+            .andExpect(content().string(""));
   }
 
   @Test
@@ -163,7 +167,9 @@ public class WidgetRestTest {
   void getWidgetCssAnonymouslyWhenNotFound() throws Exception {
     when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/css"));
-    response.andExpect(status().isNotFound());
+    response.andExpect(status().isNotFound())
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
+            .andExpect(content().string(""));
   }
 
   @Test
@@ -180,7 +186,9 @@ public class WidgetRestTest {
   void getWidgetJsAnonymouslyWhenNotFound() throws Exception {
     when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/js"));
-    response.andExpect(status().isNotFound());
+    response.andExpect(status().isNotFound())
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
+            .andExpect(content().string(""));
   }
 
   @Test

@@ -221,7 +221,9 @@ public class WidgetServiceTest {
     assertEquals(new ApplicationCode(null, null, JS_CONTENT),
                  widgetService.readWidgetCodeOnApplication(context(20, Map.of("portletInstanceId", "3"))));
     assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of())));
-    assertThrows(ObjectNotFoundException.class, () -> widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "66"))));
+    assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "66"))));
+    assertEquals(new ApplicationCode(null, null, JS_CONTENT),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "66", "portletInstanceId", "3"))));
   }
 
   @Test
@@ -363,16 +365,53 @@ public class WidgetServiceTest {
     when(layoutService.load(state)).thenReturn(preferences);
     when(page.getChildren()).thenReturn(new ArrayList<>(List.of(window)));
 
-    widgetService.publishDraftCopies("portal::test::home", page);
+    when(layoutService.getId(state)).thenReturn("ide/WidgetPortlet");
+    Application other = mock(Application.class);
+    ApplicationState otherState = mock(ApplicationState.class);
+    when(other.getState()).thenReturn(otherState);
+    when(layoutService.getId(otherState)).thenReturn("content/Links");
+    when(page.getChildren()).thenReturn(new ArrayList<>(List.of(window, other)));
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+
+    widgetService.publishDraftCopies("portal::test::home", page, USERNAME);
 
     verify(widgetStorage).updateWidget(argThat(w -> w.getId() == 7L && !w.getProperties().containsKey("draftCopy")
                                                     && "21".equals(w.getProperties().get("ownerWindow"))));
     verify(widgetStorage, never()).updateWidget(argThat(w -> w.getId() == 8L));
     verify(layoutAclService, never()).isAdministrator(any());
+    verify(layoutService, never()).load(otherState);
 
     when(widgetStorage.getWidgetsByProperties(marked)).thenReturn(List.of());
-    widgetService.publishDraftCopies("portal::test::home", page);
+    widgetService.publishDraftCopies("portal::test::home", page, USERNAME);
     verify(widgetStorage, times(1)).updateWidget(any());
+  }
+
+  @Test
+  public void anotherEditorsPublishLeavesTheCopyUnpublished() throws Exception {
+    Widget referenced = copy(7L, "portal::test::home", "21");
+    Map<String, String> marked = new HashMap<>();
+    marked.put("draftCopy", "true");
+    marked.put("ownerLayout", "portal::test::home");
+    when(widgetStorage.getWidgetsByProperties(marked)).thenReturn(List.of(referenced));
+    Container page = mock(Container.class);
+    Application window = mock(Application.class);
+    ApplicationState state = mock(ApplicationState.class);
+    when(window.getState()).thenReturn(state);
+    when(layoutService.getId(state)).thenReturn("ide/WidgetPortlet");
+    Portlet preferences = new Portlet();
+    preferences.setValue("widgetId", "7");
+    when(layoutService.load(state)).thenReturn(preferences);
+    when(page.getChildren()).thenReturn(new ArrayList<>(List.of(window)));
+    Identity editor = mock(Identity.class);
+    when(editor.getId()).thenReturn("2");
+    when(identityManager.getOrCreateUserIdentity("editor")).thenReturn(editor);
+
+    widgetService.publishDraftCopies("portal::test::home", page, "editor");
+    widgetService.publishDraftCopies("portal::test::home", page, null);
+
+    verify(widgetStorage, never()).updateWidget(any());
+    assertEquals("true", referenced.getProperties().get("draftCopy"));
   }
 
   @Test
@@ -399,9 +438,32 @@ public class WidgetServiceTest {
     verify(widgetStorage, never()).updateWidget(any());
   }
 
+  @Test
+  public void aWindowWhoseWidgetWasDeletedIsWrittenIntoACopyFromItsOtherSources() throws Exception {
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "66", "portletInstanceId", "3"));
+    Widget instance = new Widget();
+    instance.setHtml(HTML_CONTENT);
+    when(widgetStorage.getWidgetByPortletId(3L)).thenReturn(instance);
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> {
+      Widget created = i.getArgument(0);
+      created.setId(33L);
+      return created;
+    });
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, null, "z()", USERNAME);
+
+    assertEquals(33L, result.getId());
+    assertEquals(HTML_CONTENT, result.getHtml());
+    assertEquals("z()", result.getJs());
+  }
+
   private Widget copy(long id, String ownerLayout, String ownerWindow) {
     Widget copy = new Widget();
     copy.setId(id);
+    copy.setCreatorId(1L);
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("draftCopy", "true");
     properties.put("ownerWindow", ownerWindow);

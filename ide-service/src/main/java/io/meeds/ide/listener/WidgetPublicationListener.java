@@ -41,7 +41,8 @@ import jakarta.annotation.PostConstruct;
  * Glue on the two publication events of the layout, and on those two alone:
  * a publication is the one write that makes a draft's widget copies live,
  * so it is the one event that clears their unpublished marker. Synchronous
- * inside the publishing call; a failure is logged and never aborts the
+ * inside the publishing call, the publishing user passed on, whose own
+ * copies alone are marked published; a failure is logged and never aborts the
  * publication, whose layout is saved already: the copy then stays marked,
  * served to the layout's editors only.
  */
@@ -71,10 +72,12 @@ public class WidgetPublicationListener extends Listener<String, Object> {
     try {
       if (data instanceof String pageRef) {
         Page page = layoutService.getPage(PageKey.parse(pageRef));
-        widgetService.publishDraftCopies(pageRef, page);
+        widgetService.publishDraftCopies(pageRef, page, event.getSource());
       } else if (data instanceof SiteKey siteKey) {
         PortalConfig site = layoutService.getPortalConfig(siteKey);
-        widgetService.publishDraftCopies(WidgetService.layoutKey(siteKey), site == null ? null : site.getPortalLayout());
+        widgetService.publishDraftCopies(WidgetService.layoutKey(siteKey),
+                                         site == null ? null : site.getPortalLayout(),
+                                         event.getSource());
       }
     } catch (Exception e) {
       LOG.warn("Widget copies of published layout {} could not be marked published", data, e);

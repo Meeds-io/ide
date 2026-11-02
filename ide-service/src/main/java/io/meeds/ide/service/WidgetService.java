@@ -149,15 +149,14 @@ public class WidgetService {
 
   /**
    * The code a window renders, as the layout reads describe it: the widget
-   * its preference names, else the code a never-rendered window carries in
-   * its data.init preference, else the catalog instance's widget, else none
+   * its preference names, else (no widgetId, or one naming a deleted widget)
+   * the code a never-rendered window carries in its data.init preference,
+   * else the catalog instance's widget, else none
    *
    * @param context the window
    * @return the code, null when the window has none yet
-   * @throws ObjectNotFoundException when the widget the window names no
-   *           longer exists
    */
-  public ApplicationCode readWidgetCodeOnApplication(ApplicationSettingsContext context) throws ObjectNotFoundException {
+  public ApplicationCode readWidgetCodeOnApplication(ApplicationSettingsContext context) {
     Widget widget = sourceWidget(context.getPreferences(), context.getUsername());
     return widget == null ? null : new ApplicationCode(widget.getHtml(), widget.getCss(), widget.getJs());
   }
@@ -240,13 +239,26 @@ public class WidgetService {
    * Marks published every unpublished copy a window of the published layout
    * references and whose owner layout is that layout; the ownership markers
    * stay, since ownership keeps deciding copy against in-place on the next
-   * draft. Called by the publication listener alone.
+   * draft. Only the copies the publishing user wrote are marked published:
+   * a draft is its author's, so a copy reaches the live page through its
+   * author's publish, and a copy another editor's draft references (a
+   * forged widgetId preference) stays unpublished, readable by the layout's
+   * editors only. Called by the publication listener alone.
    *
    * @param layoutKey the live page reference or site key just published
    * @param publishedLayout the published layout's tree, read back after the
    *          save
+   * @param publisher the user who published
    */
-  public void publishDraftCopies(String layoutKey, ModelObject publishedLayout) {
+  public void publishDraftCopies(String layoutKey, ModelObject publishedLayout, String publisher) {
+    if (StringUtils.isBlank(publisher)) {
+      return;
+    }
+    Identity publisherIdentity = identityManager.getOrCreateUserIdentity(publisher);
+    if (publisherIdentity == null) {
+      return;
+    }
+    long publisherId = Long.parseLong(publisherIdentity.getId());
     Map<String, String> marked = new HashMap<>();
     marked.put(DRAFT_COPY_PROPERTY, Boolean.TRUE.toString());
     marked.put(OWNER_LAYOUT_PROPERTY, layoutKey);
@@ -256,7 +268,10 @@ public class WidgetService {
     }
     Set<Long> referenced = new HashSet<>();
     collectWidgetIds(publishedLayout, referenced);
-    copies.stream().filter(copy -> referenced.contains(copy.getId())).forEach(copy -> {
+    copies.stream()
+          .filter(copy -> referenced.contains(copy.getId()))
+          .filter(copy -> copy.getCreatorId() != null && copy.getCreatorId() == publisherId)
+          .forEach(copy -> {
       Map<String, String> properties = new LinkedHashMap<>(copy.getProperties());
       properties.remove(DRAFT_COPY_PROPERTY);
       copy.setProperties(properties);
@@ -302,13 +317,13 @@ public class WidgetService {
    * copy the user may not edit the layout of reads as no code, so a widgetId
    * preference forged on another layout's window leaks nothing
    */
-  private Widget sourceWidget(Map<String, String> preferences, String username) throws ObjectNotFoundException {
+  private Widget sourceWidget(Map<String, String> preferences, String username) {
     if (preferences == null) {
       return null;
     }
-    String widgetId = preferences.get(WIDGET_ID_PREFERENCE);
-    if (NumberUtils.isDigits(widgetId)) {
-      return readableOrNull(getWidget(Long.parseLong(widgetId)), username);
+    Widget referenced = widgetOf(preferences.get(WIDGET_ID_PREFERENCE));
+    if (referenced != null) {
+      return readableOrNull(referenced, username);
     }
     String dataInit = preferences.get(DATA_INIT_PREFERENCE);
     if (StringUtils.isNotBlank(dataInit)) {
@@ -344,7 +359,8 @@ public class WidgetService {
   private void collectWidgetIds(ModelObject object, Set<Long> ids) {
     if (object instanceof Container container && container.getChildren() != null) {
       container.getChildren().forEach(child -> collectWidgetIds(child, ids));
-    } else if (object instanceof Application application) {
+    } else if (object instanceof Application application
+               && StringUtils.endsWith(layoutService.getId(application.getState()), "/" + WIDGET_PORTLET_NAME)) {
       Portlet preferences = layoutService.load(application.getState());
       String widgetId = preferences == null ? null : preferences.getValue(WIDGET_ID_PREFERENCE);
       if (NumberUtils.isDigits(widgetId)) {
