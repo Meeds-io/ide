@@ -18,6 +18,7 @@
 package io.meeds.ide.listener;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -45,6 +46,8 @@ import io.meeds.ide.service.WidgetService;
 import io.meeds.layout.service.PageLayoutService;
 import io.meeds.layout.service.SiteLayoutService;
 
+import jakarta.annotation.PostConstruct;
+
 @SpringBootTest(classes = { WidgetPublicationListener.class })
 @ExtendWith(MockitoExtension.class)
 public class WidgetPublicationListenerTest {
@@ -62,6 +65,15 @@ public class WidgetPublicationListenerTest {
 
   @Autowired
   private WidgetPublicationListener listener;
+
+  /**
+   * Also kills the mutant that removes {@code @PostConstruct} from
+   * {@code init}: the test calls it by hand, so the annotation is asserted
+   */
+  @Test
+  public void theRegistrationRunsAtStartup() throws NoSuchMethodException {
+    assertTrue(WidgetPublicationListener.class.getMethod("init").isAnnotationPresent(PostConstruct.class));
+  }
 
   @Test
   public void theListenerIsRegisteredOnTheTwoPublicationEventsOnly() {

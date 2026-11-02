@@ -29,10 +29,10 @@ import io.meeds.layout.service.ApplicationCodeService;
 import jakarta.annotation.PostConstruct;
 
 /**
- * The code read of an IDE widget's window for the layout descriptions: the
- * widget the window's preference names, else the code a never-rendered
- * window carries, else the catalog instance's widget. Glue over
- * {@link WidgetService}.
+ * The code read of an IDE widget's window for the layout descriptions, in
+ * the order {@link WidgetService#readWidgetCodeOnApplication} reads it: a
+ * data.init the window still carries, else the widget its widgetId names,
+ * else the catalog instance's widget. Glue over {@link WidgetService}.
  */
 @Component
 public class WidgetApplicationCodePlugin implements ApplicationCodePlugin {

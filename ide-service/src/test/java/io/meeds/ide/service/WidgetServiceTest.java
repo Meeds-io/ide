@@ -207,7 +207,7 @@ public class WidgetServiceTest {
   }
 
   @Test
-  public void theCodeOfAWindowIsReadFromItsWidgetElseItsDataInitElseTheInstanceWidget() throws Exception {
+  public void theCodeOfAWindowIsReadFromItsDataInitElseItsWidgetElseTheInstanceWidget() throws Exception {
     Widget stored = new Widget();
     stored.setHtml(HTML_CONTENT);
     when(widgetStorage.getWidget(5L)).thenReturn(stored);
