@@ -18,6 +18,8 @@
 package io.meeds.ide.plugin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,6 +34,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import io.meeds.ide.service.WidgetService;
 import io.meeds.layout.model.ApplicationCode;
 import io.meeds.layout.model.ApplicationSettingsContext;
+import io.meeds.layout.model.PortletInstance;
+import io.meeds.layout.model.PortletInstancePreference;
+import io.meeds.social.util.JsonUtils;
 import io.meeds.layout.service.ApplicationCodeService;
 
 import jakarta.annotation.PostConstruct;
@@ -66,6 +71,22 @@ public class WidgetApplicationCodePluginTest {
     ApplicationCode code = new ApplicationCode("<b/>", null, "x()");
     when(widgetService.readWidgetCodeOnApplication(context)).thenReturn(code);
     assertEquals(code, plugin.read(context));
+  }
+
+  @Test
+  public void aWidgetPlacedWithoutCatalogInstanceIsANewWindowWithAnEmptyDataInit() {
+    PortletInstance application = plugin.newApplication();
+    assertEquals("ide/WidgetPortlet", application.getContentId());
+    assertEquals("Widget", application.getName());
+    assertEquals(1, application.getPreferences().size());
+    PortletInstancePreference dataInit = application.getPreferences().get(0);
+    assertEquals("data.init", dataInit.getName());
+    ApplicationCode code = JsonUtils.fromJsonString(dataInit.getValue(), ApplicationCode.class);
+    assertNull(code.html());
+    assertNull(code.css());
+    assertNull(code.js());
+    assertNotSame(application, plugin.newApplication());
+    assertNotSame(application.getPreferences(), plugin.newApplication().getPreferences());
   }
 
 }
