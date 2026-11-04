@@ -17,14 +17,23 @@
  */
 package io.meeds.ide.plugin;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import io.meeds.ide.service.StaticResourceService;
 import io.meeds.ide.service.WidgetService;
 import io.meeds.layout.model.ApplicationCode;
 import io.meeds.layout.model.ApplicationSettingsContext;
+import io.meeds.layout.model.PortletInstance;
+import io.meeds.layout.model.PortletInstancePreference;
 import io.meeds.layout.plugin.ApplicationCodePlugin;
 import io.meeds.layout.service.ApplicationCodeService;
+import io.meeds.social.util.JsonUtils;
 
 import jakarta.annotation.PostConstruct;
 
@@ -33,9 +42,17 @@ import jakarta.annotation.PostConstruct;
  * the order {@link WidgetService#readWidgetCodeOnApplication} reads it: a
  * data.init the window still carries, else the widget its widgetId names,
  * else the catalog instance's widget. Glue over {@link WidgetService}.
+ * A widget placed while no catalog instance carries it is a window with an
+ * empty data.init: its first render, or its first code write, gives it a
+ * widget of its own, so that placing a widget never touches another.
  */
 @Component
 public class WidgetApplicationCodePlugin implements ApplicationCodePlugin {
+
+  public static final String     NEW_WIDGET_NAME        = "Widget";
+
+  public static final String     NEW_WIDGET_DESCRIPTION =
+                                                        "A custom application, empty until update_widget_code writes its HTML, CSS and JavaScript";
 
   @Autowired
   private WidgetService          widgetService;
@@ -58,6 +75,21 @@ public class WidgetApplicationCodePlugin implements ApplicationCodePlugin {
   @Override
   public ApplicationCode read(ApplicationSettingsContext context) {
     return widgetService.readWidgetCodeOnApplication(context);
+  }
+
+  @Override
+  public PortletInstance newApplication() {
+    Map<String, String> emptyCode = new LinkedHashMap<>();
+    emptyCode.put("html", null);
+    emptyCode.put("css", null);
+    emptyCode.put("js", null);
+    PortletInstance application = new PortletInstance();
+    application.setContentId(StaticResourceService.CONTENT_ID);
+    application.setName(NEW_WIDGET_NAME);
+    application.setDescription(NEW_WIDGET_DESCRIPTION);
+    application.setPreferences(new ArrayList<>(List.of(new PortletInstancePreference(WidgetService.DATA_INIT_PREFERENCE,
+                                                                                     JsonUtils.toJsonString(emptyCode)))));
+    return application;
   }
 
 }
