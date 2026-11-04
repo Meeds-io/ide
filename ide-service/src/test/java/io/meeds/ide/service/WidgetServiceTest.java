@@ -315,6 +315,40 @@ public class WidgetServiceTest {
   }
 
   @Test
+  public void twoWidgetsPlacedWithoutCatalogInstanceGetACopyEachAndTheSecondWriteLeavesTheFirst() throws Exception {
+    String emptyCode = "{\"html\":null,\"css\":null,\"js\":null}";
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    long[] nextId = { 41L };
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> {
+      Widget created = i.getArgument(0);
+      created.setId(nextId[0]++);
+      return created;
+    });
+
+    ApplicationSettingsContext first = lockedWindow(21, Map.of("data.init", emptyCode));
+    ApplicationSettingsContext second = context(22, Map.of("data.init", emptyCode));
+    Widget firstWidget = widgetService.updateWidgetCodeOnApplication(first, "portal::test::home", "<b>first</b>", null, null, USERNAME);
+    Widget secondWidget = widgetService.updateWidgetCodeOnApplication(second, "portal::test::home", "<b>second</b>", null, null, USERNAME);
+
+    assertEquals(41L, firstWidget.getId());
+    assertEquals("<b>first</b>", firstWidget.getHtml());
+    assertEquals(42L, secondWidget.getId());
+    assertEquals("<b>second</b>", secondWidget.getHtml());
+    verify(widgetStorage, never()).updateWidget(any());
+    verify(widgetStorage, never()).deleteWidgetById(anyLong());
+    Map<String, String> firstPreferences = new HashMap<>();
+    firstPreferences.put("widgetId", "41");
+    firstPreferences.put("data.init", null);
+    verify(applicationSettingsService).updatePreferences(first, firstPreferences);
+    Map<String, String> secondPreferences = new HashMap<>();
+    secondPreferences.put("widgetId", "42");
+    secondPreferences.put("data.init", null);
+    verify(applicationSettingsService).updatePreferences(second, secondPreferences);
+  }
+
+  @Test
   public void aFailedPreferenceWriteDeletesTheCopyItCreatedAndAnswersTheFailure() throws Exception {
     ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "5"));
     Widget shared = new Widget();
