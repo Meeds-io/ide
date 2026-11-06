@@ -44,6 +44,28 @@ import org.exoplatform.social.core.manager.IdentityManager;
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.storage.WidgetStorage;
 import io.meeds.layout.service.LayoutAclService;
+import io.meeds.layout.service.ApplicationSettingsService;
+import io.meeds.layout.model.ApplicationCode;
+import io.meeds.layout.model.ApplicationSettingsContext;
+import io.meeds.layout.model.LayoutWrite;
+import org.exoplatform.portal.config.model.Application;
+import org.exoplatform.portal.config.model.ApplicationState;
+import org.exoplatform.portal.config.model.Container;
+import org.exoplatform.portal.config.model.PersistentApplicationState;
+import org.exoplatform.portal.mop.SiteKey;
+import org.exoplatform.portal.mop.page.PageKey;
+import org.exoplatform.portal.mop.service.LayoutService;
+import org.exoplatform.portal.pom.spi.portlet.Portlet;
+import org.mockito.InOrder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 @SpringBootTest(classes = {
                             WidgetService.class,
@@ -70,6 +92,12 @@ public class WidgetServiceTest {
 
   @MockitoBean
   private WidgetStorage       widgetStorage;
+
+  @MockitoBean
+  private LayoutService       layoutService;
+
+  @MockitoBean
+  private ApplicationSettingsService applicationSettingsService;
 
   @Autowired
   private WidgetService       widgetService;
@@ -151,6 +179,383 @@ public class WidgetServiceTest {
     widgetService.deleteWidget(6L, USERNAME);
 
     verify(widgetStorage, times(1)).deleteWidgetById(6L);
+  }
+
+  @Test
+  public void anUnpublishedCopyIsReadByTheEditorsOfItsLayoutOnly() throws Exception {
+    Widget copy = copy(7L, "portal::test::home", "21");
+    when(widgetStorage.getWidget(7L)).thenReturn(copy);
+    Widget published = new Widget();
+    published.setId(8L);
+    when(widgetStorage.getWidget(8L)).thenReturn(published);
+
+    assertSame(published, widgetService.getWidget(8L, null));
+    assertSame(published, widgetService.getWidget(8L, USERNAME));
+    assertFalse(widgetService.isDraftCopy(published));
+    assertTrue(widgetService.isDraftCopy(copy));
+    assertThrows(IllegalAccessException.class, () -> widgetService.getWidget(7L, null));
+    assertThrows(IllegalAccessException.class, () -> widgetService.getWidget(7L, USERNAME));
+    when(layoutAclService.canEditPage(PageKey.parse("portal::test::home"), USERNAME)).thenReturn(true);
+    assertSame(copy, widgetService.getWidget(7L, USERNAME));
+
+    Widget siteCopy = copy(9L, "portal::test", "40");
+    when(widgetStorage.getWidget(9L)).thenReturn(siteCopy);
+    assertThrows(IllegalAccessException.class, () -> widgetService.getWidget(9L, USERNAME));
+    when(layoutAclService.canEditSite(new SiteKey("portal", "test"), USERNAME)).thenReturn(true);
+    assertSame(siteCopy, widgetService.getWidget(9L, USERNAME));
+    assertThrows(ObjectNotFoundException.class, () -> widgetService.getWidget(99L, USERNAME));
+  }
+
+  @Test
+  public void theCodeOfAWindowIsReadFromItsDataInitElseItsWidgetElseTheInstanceWidget() throws Exception {
+    Widget stored = new Widget();
+    stored.setHtml(HTML_CONTENT);
+    when(widgetStorage.getWidget(5L)).thenReturn(stored);
+    assertEquals(new ApplicationCode(HTML_CONTENT, null, null),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "5"))));
+    assertEquals(new ApplicationCode("<i/>", "i{}", "y()"),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("data.init", "{\"html\":\"<i/>\",\"css\":\"i{}\",\"js\":\"y()\"}"))));
+    Widget instance = new Widget();
+    instance.setJs(JS_CONTENT);
+    when(widgetStorage.getWidgetByPortletId(3L)).thenReturn(instance);
+    assertEquals(new ApplicationCode(null, null, JS_CONTENT),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("portletInstanceId", "3"))));
+    assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of())));
+    assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "66"))));
+    assertEquals(new ApplicationCode(null, null, JS_CONTENT),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "66", "portletInstanceId", "3"))));
+  }
+
+  @Test
+  public void aSharedWidgetIsCopiedForTheDraftWindowAndTheWindowPointedAtTheCopyInOneWrite() throws Exception {
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "5"));
+    Widget shared = new Widget();
+    shared.setId(5L);
+    shared.setHtml(HTML_CONTENT);
+    shared.setCss(CSS_CONTENT);
+    shared.setJs(JS_CONTENT);
+    when(widgetStorage.getWidget(5L)).thenReturn(shared);
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> {
+      Widget created = i.getArgument(0);
+      created.setId(31L);
+      return created;
+    });
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", "<b/>", null, null, USERNAME);
+
+    assertEquals(31L, result.getId());
+    assertEquals("<b/>", result.getHtml());
+    assertEquals(CSS_CONTENT, result.getCss());
+    assertEquals(JS_CONTENT, result.getJs());
+    assertNull(result.getPortletId());
+    assertEquals(Map.of("draftCopy", "true", "ownerWindow", "21", "ownerLayout", "portal::test::home"), result.getProperties());
+    Map<String, String> expected = new HashMap<>();
+    expected.put("widgetId", "31");
+    expected.put("data.init", null);
+    verify(applicationSettingsService).updatePreferences(window, expected);
+    verify(widgetStorage, never()).updateWidget(any());
+    verify(widgetStorage, never()).deleteWidgetById(anyLong());
+    verify(applicationSettingsService).runLocked(eq("portal::test::home_draft_testUser"), eq(21L), any());
+  }
+
+  @Test
+  public void aCopyTheWindowOwnsIsWrittenInPlaceKeepingTheOmittedPartsAndTheMarkers() throws Exception {
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "7"));
+    Widget owned = copy(7L, "portal::test::home", "21");
+    owned.setHtml(HTML_CONTENT);
+    owned.setCss(CSS_CONTENT);
+    when(widgetStorage.getWidget(7L)).thenReturn(owned);
+    when(widgetStorage.updateWidget(any())).thenAnswer(i -> i.getArgument(0));
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, null, "z()", USERNAME);
+
+    assertSame(owned, result);
+    assertEquals(HTML_CONTENT, result.getHtml());
+    assertEquals(CSS_CONTENT, result.getCss());
+    assertEquals("z()", result.getJs());
+    assertEquals("true", result.getProperties().get("draftCopy"));
+    verify(widgetStorage, never()).createWidget(any());
+    verify(applicationSettingsService, never()).updatePreferences(any(), any());
+
+    Widget otherWindows = copy(7L, "portal::test::home", "99");
+    when(widgetStorage.getWidget(7L)).thenReturn(otherWindows);
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> i.getArgument(0));
+    widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, null, "z()", USERNAME);
+    verify(widgetStorage).createWidget(any());
+  }
+
+  @Test
+  public void aNeverRenderedWindowCopiesItsDataInitAndClearsIt() throws Exception {
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("data.init", "{\"html\":\"<i/>\",\"css\":\"i{}\",\"js\":\"y()\"}", "portletInstanceId", "3"));
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> {
+      Widget created = i.getArgument(0);
+      created.setId(32L);
+      return created;
+    });
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, "b{}", null, USERNAME);
+
+    assertEquals("<i/>", result.getHtml());
+    assertEquals("b{}", result.getCss());
+    assertEquals("y()", result.getJs());
+    verify(widgetStorage, never()).getWidgetByPortletId(anyLong());
+    Map<String, String> expected = new HashMap<>();
+    expected.put("widgetId", "32");
+    expected.put("data.init", null);
+    verify(applicationSettingsService).updatePreferences(window, expected);
+  }
+
+  @Test
+  public void twoWidgetsPlacedWithoutCatalogInstanceGetACopyEachAndTheSecondWriteLeavesTheFirst() throws Exception {
+    String emptyCode = "{\"html\":null,\"css\":null,\"js\":null}";
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    long[] nextId = { 41L };
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> {
+      Widget created = i.getArgument(0);
+      created.setId(nextId[0]++);
+      return created;
+    });
+
+    ApplicationSettingsContext first = lockedWindow(21, Map.of("data.init", emptyCode));
+    ApplicationSettingsContext second = context(22, Map.of("data.init", emptyCode));
+    Widget firstWidget = widgetService.updateWidgetCodeOnApplication(first, "portal::test::home", "<b>first</b>", null, null, USERNAME);
+    Widget secondWidget = widgetService.updateWidgetCodeOnApplication(second, "portal::test::home", "<b>second</b>", null, null, USERNAME);
+
+    assertEquals(41L, firstWidget.getId());
+    assertEquals("<b>first</b>", firstWidget.getHtml());
+    assertEquals(42L, secondWidget.getId());
+    assertEquals("<b>second</b>", secondWidget.getHtml());
+    verify(widgetStorage, never()).updateWidget(any());
+    verify(widgetStorage, never()).deleteWidgetById(anyLong());
+    Map<String, String> firstPreferences = new HashMap<>();
+    firstPreferences.put("widgetId", "41");
+    firstPreferences.put("data.init", null);
+    verify(applicationSettingsService).updatePreferences(first, firstPreferences);
+    Map<String, String> secondPreferences = new HashMap<>();
+    secondPreferences.put("widgetId", "42");
+    secondPreferences.put("data.init", null);
+    verify(applicationSettingsService).updatePreferences(second, secondPreferences);
+  }
+
+  @Test
+  public void aFailedPreferenceWriteDeletesTheCopyItCreatedAndAnswersTheFailure() throws Exception {
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "5"));
+    Widget shared = new Widget();
+    shared.setId(5L);
+    when(widgetStorage.getWidget(5L)).thenReturn(shared);
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> {
+      Widget created = i.getArgument(0);
+      created.setId(31L);
+      return created;
+    });
+    doThrow(new IllegalStateException("layout.pageOutdatedError")).when(applicationSettingsService).updatePreferences(any(), any());
+
+    assertEquals("layout.pageOutdatedError",
+                 assertThrows(IllegalStateException.class,
+                              () -> widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", "<b/>", null, null, USERNAME)).getMessage());
+
+    InOrder order = inOrder(widgetStorage, applicationSettingsService);
+    order.verify(widgetStorage).createWidget(any());
+    order.verify(applicationSettingsService).updatePreferences(any(), any());
+    order.verify(widgetStorage).deleteWidgetById(31L);
+  }
+
+  @Test
+  public void aNonAdministratorIsRefusedBeforeTheLock() throws Exception {
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "5"));
+    assertThrows(IllegalAccessException.class,
+                 () -> widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", "<b/>", null, null, USERNAME));
+    verify(applicationSettingsService, never()).runLocked(any(), anyLong(), any());
+  }
+
+  @Test
+  public void aPublicationClearsTheMarkerOfTheCopiesThePublishedLayoutReferencesOnly() throws Exception {
+    Widget referenced = copy(7L, "portal::test::home", "21");
+    Widget unreferenced = copy(8L, "portal::test::home", "22");
+    Map<String, String> marked = new HashMap<>();
+    marked.put("draftCopy", "true");
+    marked.put("ownerLayout", "portal::test::home");
+    when(widgetStorage.getWidgetsByProperties(marked)).thenReturn(List.of(referenced, unreferenced));
+    Container page = mock(Container.class);
+    Application window = mock(Application.class);
+    ApplicationState state = mock(ApplicationState.class);
+    when(window.getState()).thenReturn(state);
+    Portlet preferences = new Portlet();
+    preferences.setValue("widgetId", "7");
+    when(layoutService.load(state)).thenReturn(preferences);
+    when(page.getChildren()).thenReturn(new ArrayList<>(List.of(window)));
+
+    when(layoutService.getId(state)).thenReturn("ide/WidgetPortlet");
+    Application other = mock(Application.class);
+    ApplicationState otherState = mock(ApplicationState.class);
+    when(other.getState()).thenReturn(otherState);
+    when(layoutService.getId(otherState)).thenReturn("content/Links");
+    when(page.getChildren()).thenReturn(new ArrayList<>(List.of(window, other)));
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+
+    widgetService.publishDraftCopies("portal::test::home", page, USERNAME);
+
+    verify(widgetStorage).updateWidget(argThat(w -> w.getId() == 7L && !w.getProperties().containsKey("draftCopy")
+                                                    && "21".equals(w.getProperties().get("ownerWindow"))));
+    verify(widgetStorage, never()).updateWidget(argThat(w -> w.getId() == 8L));
+    verify(layoutAclService, never()).isAdministrator(any());
+    verify(layoutService, never()).load(otherState);
+
+    when(widgetStorage.getWidgetsByProperties(marked)).thenReturn(List.of());
+    widgetService.publishDraftCopies("portal::test::home", page, USERNAME);
+    verify(widgetStorage, times(1)).updateWidget(any());
+  }
+
+  @Test
+  public void anotherEditorsPublishLeavesTheCopyUnpublished() throws Exception {
+    Widget referenced = copy(7L, "portal::test::home", "21");
+    Map<String, String> marked = new HashMap<>();
+    marked.put("draftCopy", "true");
+    marked.put("ownerLayout", "portal::test::home");
+    when(widgetStorage.getWidgetsByProperties(marked)).thenReturn(List.of(referenced));
+    Container page = mock(Container.class);
+    Application window = mock(Application.class);
+    ApplicationState state = mock(ApplicationState.class);
+    when(window.getState()).thenReturn(state);
+    when(layoutService.getId(state)).thenReturn("ide/WidgetPortlet");
+    Portlet preferences = new Portlet();
+    preferences.setValue("widgetId", "7");
+    when(layoutService.load(state)).thenReturn(preferences);
+    when(page.getChildren()).thenReturn(new ArrayList<>(List.of(window)));
+    Identity editor = mock(Identity.class);
+    when(editor.getId()).thenReturn("2");
+    when(identityManager.getOrCreateUserIdentity("editor")).thenReturn(editor);
+
+    widgetService.publishDraftCopies("portal::test::home", page, "editor");
+    widgetService.publishDraftCopies("portal::test::home", page, null);
+
+    verify(widgetStorage, never()).updateWidget(any());
+    assertEquals("true", referenced.getProperties().get("draftCopy"));
+  }
+
+  @Test
+  public void anUnpublishedCopyForgedOnAnotherWindowReadsAsNoCodeAndIsNeverCopiedFrom() throws Exception {
+    Widget foreign = copy(7L, "portal::other::page", "99");
+    foreign.setHtml(HTML_CONTENT);
+    when(widgetStorage.getWidget(7L)).thenReturn(foreign);
+
+    assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "7"))));
+    Widget instance = new Widget();
+    instance.setJs(JS_CONTENT);
+    when(widgetStorage.getWidgetByPortletId(3L)).thenReturn(instance);
+    assertNull(widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "7", "portletInstanceId", "3"))));
+    when(layoutAclService.canEditPage(PageKey.parse("portal::other::page"), USERNAME)).thenReturn(true);
+    assertEquals(new ApplicationCode(HTML_CONTENT, null, null), widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "7"))));
+    when(layoutAclService.canEditPage(PageKey.parse("portal::other::page"), USERNAME)).thenReturn(false);
+
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "7"));
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> i.getArgument(0));
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, "b{}", null, USERNAME);
+
+    assertNull(result.getHtml());
+    assertEquals("b{}", result.getCss());
+    verify(widgetStorage, never()).updateWidget(any());
+  }
+
+  @Test
+  public void aWindowWhoseWidgetWasDeletedIsWrittenIntoACopyFromItsOtherSources() throws Exception {
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "66", "portletInstanceId", "3"));
+    Widget instance = new Widget();
+    instance.setHtml(HTML_CONTENT);
+    when(widgetStorage.getWidgetByPortletId(3L)).thenReturn(instance);
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> {
+      Widget created = i.getArgument(0);
+      created.setId(33L);
+      return created;
+    });
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, null, "z()", USERNAME);
+
+    assertEquals(33L, result.getId());
+    assertEquals(HTML_CONTENT, result.getHtml());
+    assertEquals("z()", result.getJs());
+  }
+
+  @Test
+  public void aNeverRenderedWindowCarryingBothPreferencesIsReadAndCopiedFromItsDataInitAsItRenders() throws Exception {
+    Widget other = new Widget();
+    other.setId(5L);
+    other.setHtml("<old/>");
+    other.setCss("old{}");
+    when(widgetStorage.getWidget(5L)).thenReturn(other);
+    String dataInit = "{\"html\":\"<i/>\",\"css\":\"i{}\",\"js\":\"y()\"}";
+    assertEquals(new ApplicationCode("<i/>", "i{}", "y()"),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "5", "data.init", dataInit))));
+    assertEquals(new ApplicationCode(null, null, null),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "5", "data.init", ""))));
+    assertEquals(new ApplicationCode(null, null, null),
+                 widgetService.readWidgetCodeOnApplication(context(20, Map.of("widgetId", "5", "data.init", "null"))));
+
+    ApplicationSettingsContext window = lockedWindow(21, Map.of("widgetId", "5", "data.init", dataInit));
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("1");
+    when(widgetStorage.createWidget(any())).thenAnswer(i -> i.getArgument(0));
+
+    Widget result = widgetService.updateWidgetCodeOnApplication(window, "portal::test::home", null, null, "z()", USERNAME);
+
+    assertEquals("<i/>", result.getHtml());
+    assertEquals("i{}", result.getCss());
+    assertEquals("z()", result.getJs());
+  }
+
+  private Widget copy(long id, String ownerLayout, String ownerWindow) {
+    Widget copy = new Widget();
+    copy.setId(id);
+    copy.setCreatorId(1L);
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("draftCopy", "true");
+    properties.put("ownerWindow", ownerWindow);
+    properties.put("ownerLayout", ownerLayout);
+    copy.setProperties(properties);
+    return copy;
+  }
+
+  private ApplicationSettingsContext context(long applicationId, Map<String, String> preferences) {
+    ApplicationSettingsContext context = new ApplicationSettingsContext();
+    context.setApplicationId(applicationId);
+    context.setContentId("ide/WidgetPortlet");
+    context.setPreferences(new LinkedHashMap<>(preferences));
+    context.setPageKey(PageKey.parse("portal::test::home_draft_testUser"));
+    context.setSiteKey(SiteKey.portal("test"));
+    context.setUsername(USERNAME);
+    return context;
+  }
+
+  private ApplicationSettingsContext lockedWindow(long applicationId, Map<String, String> preferences) throws Exception {
+    ApplicationSettingsContext context = context(applicationId, preferences);
+    Portlet stored = new Portlet();
+    preferences.forEach(stored::setValue);
+    when(layoutService.load(any(PersistentApplicationState.class))).thenReturn(stored);
+    when(applicationSettingsService.runLocked(any(), anyLong(), any())).thenAnswer(i -> i.<LayoutWrite<Object>> getArgument(2).run());
+    return context;
   }
 
 }
