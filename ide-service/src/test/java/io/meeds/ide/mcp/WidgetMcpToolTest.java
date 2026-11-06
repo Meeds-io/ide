@@ -192,7 +192,7 @@ public class WidgetMcpToolTest {
     ApplicationSettingsContext window = context(40, WIDGET, null);
     PortalConfig site = mock(PortalConfig.class);
     when(site.getSiteKey()).thenReturn(SITE_KEY);
-    DraftWindows windows = new DraftWindows(null, null, null, site, site, null, List.of(), List.of(window));
+    DraftWindows windows = new DraftWindows(null, null, null, site, site, null, null, List.of(), List.of(window));
     when(draftService.resolveSite(5L, List.of("40"), USER)).thenReturn(windows);
 
     WidgetCodeResult result = tool.updateWidgetCode(5L, null, "40", null, "b{}", null);
@@ -278,7 +278,7 @@ public class WidgetMcpToolTest {
   }
 
   private DraftWindows pageWindows(PageKey draftKey, ApplicationSettingsContext window) {
-    return new DraftWindows(PAGE_KEY, 11L, draftKey, null, null, null, List.of(), List.of(window));
+    return new DraftWindows(PAGE_KEY, 11L, draftKey, null, null, null, null, List.of(), List.of(window));
   }
 
   private ApplicationSettingsContext context(long applicationId, String contentId, PageKey pageKey) {
