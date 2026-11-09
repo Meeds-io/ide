@@ -101,8 +101,9 @@ public class WidgetMcpTool implements McpToolPlugin {
    * @return the window on the draft, the widget it renders and its code
    * @throws ObjectNotFoundException when the layout, its draft or the window
    *           does not exist
-   * @throws IllegalAccessException when the user is not an administrator,
-   *           may not edit the layout or may not create its draft
+   * @throws IllegalAccessException when the user is not an administrator
+   *           (administrators only), or may not edit the page or the site
+   *           (not allowed: page, not allowed: site)
    */
   public WidgetCodeResult updateWidgetCode(Long siteId, // NOSONAR
                                            String pageRef,
@@ -158,7 +159,7 @@ public class WidgetMcpTool implements McpToolPlugin {
     try {
       return widgetService.updateWidgetCodeOnApplication(window, liveLayoutKey, html, css, js, username);
     } catch (IllegalAccessException e) {
-      throw new IllegalAccessException(ADMINISTRATORS_ONLY);
+      throw new IllegalAccessException(writeRefusal(e, window));
     } catch (ObjectNotFoundException e) {
       LOG.debug("Window {} or its widget disappeared while {} wrote its code", window.getApplicationId(), username, e);
       throw new ObjectNotFoundException(APPLICATION_NOT_FOUND);
@@ -172,6 +173,13 @@ public class WidgetMcpTool implements McpToolPlugin {
       LOG.debug("Widget code of window {} could not be written by {}", window.getApplicationId(), username, e);
       throw new IllegalStateException(WIDGET_CODE_NOT_SAVED);
     }
+  }
+
+  private String writeRefusal(IllegalAccessException refusal, ApplicationSettingsContext window) {
+    if (StringUtils.equals(refusal.getMessage(), WidgetService.NOT_ADMINISTRATOR_USER)) {
+      return ADMINISTRATORS_ONLY;
+    }
+    return window.isSiteContainer() ? ApplicationDraftService.SITE_NOT_ALLOWED : ApplicationDraftService.PAGE_NOT_ALLOWED;
   }
 
   private WidgetCodeResult toResult(ApplicationSettingsContext window, Widget widget, boolean draftCreated) {

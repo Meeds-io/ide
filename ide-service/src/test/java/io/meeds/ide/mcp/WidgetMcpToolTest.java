@@ -225,6 +225,24 @@ public class WidgetMcpToolTest {
 
   @Test
   @SneakyThrows
+  public void aWriteRefusedForTheLayoutIsAnsweredWithItsPageOrSiteText() {
+    ApplicationSettingsContext pageWindow = context(21, WIDGET, DRAFT_KEY);
+    when(draftService.resolvePage(PAGE_KEY, PAGE_REF, List.of("20"), USER)).thenReturn(pageWindows(DRAFT_KEY, pageWindow));
+    doThrow(new IllegalAccessException("not allowed: application")).when(widgetService)
+                                                                    .updateWidgetCodeOnApplication(any(), any(), any(), any(), any(), any());
+    assertEquals(ApplicationDraftService.PAGE_NOT_ALLOWED,
+                 assertThrows(IllegalAccessException.class, () -> tool.updateWidgetCode(null, PAGE_REF, "20", "<b/>", null, null)).getMessage());
+
+    ApplicationSettingsContext siteWindow = context(40, WIDGET, null);
+    PortalConfig site = mock(PortalConfig.class);
+    when(site.getSiteKey()).thenReturn(SITE_KEY);
+    when(draftService.resolveSite(5L, List.of("40"), USER)).thenReturn(new DraftWindows(null, null, null, site, site, null, null, List.of(), List.of(siteWindow)));
+    assertEquals(ApplicationDraftService.SITE_NOT_ALLOWED,
+                 assertThrows(IllegalAccessException.class, () -> tool.updateWidgetCode(5L, null, "40", "<b/>", null, null)).getMessage());
+  }
+
+  @Test
+  @SneakyThrows
   public void aServiceFailureIsAnsweredWithAFixedTextAndTheBusyLayoutWithItsOwn() {
     ApplicationSettingsContext window = context(21, WIDGET, DRAFT_KEY);
     when(draftService.resolvePage(PAGE_KEY, PAGE_REF, List.of("20"), USER)).thenReturn(pageWindows(DRAFT_KEY, window));
