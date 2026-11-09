@@ -130,7 +130,7 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetAnonymouslyWhenNotFound() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
+    when(widgetService.getWidget(eq(2l), isNull())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2"));
     response.andExpect(status().isNotFound())
             .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
@@ -139,14 +139,14 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetAnonymously() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), isNull())).thenReturn(widget);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2"));
     response.andExpect(status().isOk());
   }
 
   @Test
   void getWidgetHtmlAnonymouslyWhenNotFound() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
+    when(widgetService.getWidget(eq(2l), isNull())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/html"));
     response.andExpect(status().isNotFound())
             .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
@@ -155,7 +155,7 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetHtmlAnonymously() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), isNull())).thenReturn(widget);
     when(widget.getHtml()).thenReturn(HTML_CONTENT);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/html"));
     response.andExpect(status().isOk())
@@ -165,7 +165,7 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetCssAnonymouslyWhenNotFound() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
+    when(widgetService.getWidget(eq(2l), isNull())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/css"));
     response.andExpect(status().isNotFound())
             .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
@@ -174,7 +174,7 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetCssAnonymously() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), isNull())).thenReturn(widget);
     when(widget.getCss()).thenReturn(CSS_CONTENT);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/css"));
     response.andExpect(status().isOk())
@@ -184,7 +184,7 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetJsAnonymouslyWhenNotFound() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenThrow(ObjectNotFoundException.class);
+    when(widgetService.getWidget(eq(2l), isNull())).thenThrow(ObjectNotFoundException.class);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/js"));
     response.andExpect(status().isNotFound())
             .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
@@ -193,7 +193,7 @@ public class WidgetRestTest {
 
   @Test
   void getWidgetJsAnonymously() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), isNull())).thenReturn(widget);
     when(widget.getJs()).thenReturn(JS_CONTENT);
     ResultActions response = mockMvc.perform(get(REST_PATH + "/2/js"));
     response.andExpect(status().isOk())
@@ -283,7 +283,7 @@ public class WidgetRestTest {
 
   @Test
   void anUnpublishedCopyIsRefusedAsNotFoundToAViewerWithAPrivateUnstoredAnswer() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenThrow(IllegalAccessException.class);
+    when(widgetService.getWidget(eq(2l), eq(SIMPLE_USER))).thenThrow(IllegalAccessException.class);
     for (String path : new String[] { "/2", "/2/html", "/2/css", "/2/js" }) {
       mockMvc.perform(get(REST_PATH + path).with(testSimpleUser()))
              .andExpect(status().isNotFound())
@@ -294,7 +294,7 @@ public class WidgetRestTest {
 
   @Test
   void anUnpublishedCopyIsServedToItsEditorPrivateAndUnstored() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), eq(SIMPLE_USER))).thenReturn(widget);
     when(widgetService.isDraftCopy(widget)).thenReturn(true);
     when(widget.getJs()).thenReturn(JS_CONTENT);
     mockMvc.perform(get(REST_PATH + "/2/js").with(testSimpleUser()))
@@ -310,7 +310,7 @@ public class WidgetRestTest {
 
   @Test
   void aPublishedWidgetKeepsItsPublicYearLongCache() throws Exception {
-    when(widgetService.getWidget(eq(2l), any())).thenReturn(widget);
+    when(widgetService.getWidget(eq(2l), isNull())).thenReturn(widget);
     when(widget.getJs()).thenReturn(JS_CONTENT);
     mockMvc.perform(get(REST_PATH + "/2/js"))
            .andExpect(status().isOk())
