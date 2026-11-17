@@ -1,0 +1,72 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2026 Meeds Association contact@meeds.io
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+
+/*
+ * The editor frame in the dark version of the page. The page copies its display mode and its theme colours
+ * (--allPagesBaseBackground, --allPagesBaseColor, --allPagesBorderColorDark, --skinGreyLighten4) onto this
+ * document; without the attribute the editor keeps the CodeMirror default skin.
+ */
+html[data-display-mode="dark"] {
+  color-scheme: dark;
+}
+html[data-display-mode="dark"] .CodeMirror {
+  background: var(--allPagesBaseBackground, #1E2328);
+  color: var(--allPagesBaseColor, #FFFFFF);
+}
+html[data-display-mode="dark"] .CodeMirror-gutters {
+  background: var(--skinGreyLighten4, #2A3036);
+  border-right: 1px solid var(--allPagesBorderColorDark, #3A424A);
+}
+html[data-display-mode="dark"] .CodeMirror-linenumber {
+  color: var(--allPagesBaseColorMedium, #9BA3A8);
+}
+html[data-display-mode="dark"] .CodeMirror-cursor {
+  border-left-color: var(--allPagesBaseColor, #FFFFFF);
+}
+html[data-display-mode="dark"] .CodeMirror-selected,
+html[data-display-mode="dark"] .CodeMirror-focused .CodeMirror-selected {
+  background: var(--skinGreyLighten1, #4A535B);
+}
+html[data-display-mode="dark"] .CodeMirror-activeline-background {
+  background: var(--skinGreyLighten4, #2A3036);
+}
+html[data-display-mode="dark"] .CodeMirror-matchingbracket {
+  color: var(--allPagesBaseColor, #FFFFFF) !important;
+  background: var(--skinGreyLighten1, #4A535B);
+}
+html[data-display-mode="dark"] .cm-s-default .cm-header,
+html[data-display-mode="dark"] .cm-s-default .cm-keyword { color: #C792EA; }
+html[data-display-mode="dark"] .cm-s-default .cm-atom,
+html[data-display-mode="dark"] .cm-s-default .cm-number { color: #F78C6C; }
+html[data-display-mode="dark"] .cm-s-default .cm-def,
+html[data-display-mode="dark"] .cm-s-default .cm-attribute,
+html[data-display-mode="dark"] .cm-s-default .cm-link { color: #82AAFF; }
+html[data-display-mode="dark"] .cm-s-default .cm-variable-2,
+html[data-display-mode="dark"] .cm-s-default .cm-variable-3,
+html[data-display-mode="dark"] .cm-s-default .cm-type,
+html[data-display-mode="dark"] .cm-s-default .cm-builtin { color: #7FDBCA; }
+html[data-display-mode="dark"] .cm-s-default .cm-comment { color: #C3A36B; }
+html[data-display-mode="dark"] .cm-s-default .cm-string,
+html[data-display-mode="dark"] .cm-s-default .cm-string-2 { color: #ECC48D; }
+html[data-display-mode="dark"] .cm-s-default .cm-tag { color: #7FDBCA; }
+html[data-display-mode="dark"] .cm-s-default .cm-meta,
+html[data-display-mode="dark"] .cm-s-default .cm-qualifier,
+html[data-display-mode="dark"] .cm-s-default .cm-bracket,
+html[data-display-mode="dark"] .cm-s-default .cm-hr { color: var(--allPagesBaseColorMedium, #9BA3A8); }
+html[data-display-mode="dark"] .cm-s-default .cm-error { color: #FF6B6B; }

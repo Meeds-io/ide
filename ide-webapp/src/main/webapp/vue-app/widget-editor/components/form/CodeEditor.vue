@@ -8,7 +8,7 @@
     <div
       ref="content"
       :class="{
-        'position-absolute t-0 b-0 r-0 l-0 z-index-modal white': expand,
+        'position-absolute t-0 b-0 r-0 l-0 z-index-modal application-background': expand,
         'flex-grow-1': !expand,
         'pa-4': multiple
       }"
@@ -36,6 +36,15 @@
   </v-card>
 </template>
 <script>
+const DARK_PROPERTIES = [
+  '--allPagesBaseBackground',
+  '--allPagesBaseColor',
+  '--allPagesBaseColorMedium',
+  '--allPagesBorderColorDark',
+  '--skinGreyLighten1',
+  '--skinGreyLighten4',
+];
+
 export default {
   props: {
     value: {
@@ -89,9 +98,11 @@ export default {
   created() {
     this.content = this.value;
     document.addEventListener('keydown', this.collapseWithShortcut);
+    document.addEventListener('displayModeChanged', this.applyDisplayMode);
   },
   beforeDestroy() {
     document.removeEventListener('keydown', this.collapseWithShortcut);
+    document.removeEventListener('displayModeChanged', this.applyDisplayMode);
     this.resizeObserver?.disconnect?.();
   },
   mounted() {
@@ -102,8 +113,39 @@ export default {
       this.$refs.iframe.contentDocument.addEventListener('keydown', this.saveWithShortcut);
       this.$refs.iframe.contentDocument.addEventListener('keydown', this.collapseWithShortcut);
       this.resize();
+      this.applyDisplayMode();
       this.editor = this.$refs.iframe.contentWindow.init(this.content);
       this.editor.on('change', () => this.content = this.editor.getValue());
+    },
+    isDarkVersion() {
+      // an application kept light (a light scope around it) shows the light version on a dark page
+      if (this.$root?.lightOnly || this.$el?.closest?.('[data-display-mode="light"]:not(html)')) {
+        return false;
+      }
+      const version = this.$displayMode?.getVersion?.();
+      return (version || document.documentElement.getAttribute('data-display-mode')) === 'dark';
+    },
+    applyDisplayMode() {
+      // The editor frame is its own document: it receives the version shown and the theme colours its dark skin reads
+      const frameElement = this.$refs.iframe?.contentDocument?.documentElement;
+      if (!frameElement) {
+        return;
+      }
+      const dark = this.isDarkVersion();
+      const style = window.getComputedStyle(document.documentElement);
+      DARK_PROPERTIES.forEach(name => {
+        const value = dark && style.getPropertyValue(name)?.trim();
+        if (value) {
+          frameElement.style.setProperty(name, value);
+        } else {
+          frameElement.style.removeProperty(name);
+        }
+      });
+      if (dark) {
+        frameElement.setAttribute('data-display-mode', 'dark');
+      } else {
+        frameElement.removeAttribute('data-display-mode');
+      }
     },
     collapseWithShortcut(e) {
       if (this.expand && e.key === 'Escape') {
