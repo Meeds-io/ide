@@ -74,6 +74,13 @@ public class WidgetPortletInstancePreferencePlugin implements PortletInstancePre
         }
         Widget widget = widgetService.getWidget(widgetId);
         Map<String, String> content = new HashMap<>();
+        if (widgetService.isDraftCopy(widget)) {
+          // an unpublished copy is never exported: the template starts from an empty widget
+          content.put("html", null);
+          content.put("js", null);
+          content.put("css", null);
+          return List.of(new PortletInstancePreference(DATA_INIT_PREFERENCE_NAME, JsonUtils.toJsonString(content)));
+        }
         content.put("html", widget.getHtml());
         content.put("js", widget.getJs());
         content.put("css", widget.getCss());
