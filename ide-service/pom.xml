@@ -32,10 +32,6 @@
   <packaging>jar</packaging>
   <name>Meeds:: IDE - Service</name>
   <properties>
-    <rest.api.doc.title>Widget IDE Rest APIs</rest.api.doc.title>
-    <rest.api.doc.version>1.0</rest.api.doc.version>
-    <rest.api.doc.description>Widget IDE endpoints</rest.api.doc.description>
-
     <exo.test.coverage.ratio>0.87</exo.test.coverage.ratio>
   </properties>
   <dependencies>
