@@ -18,11 +18,13 @@
  */
 package io.meeds.ide.service;
 
+import io.meeds.ide.constant.WidgetType;
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.storage.WidgetStorage;
 import io.meeds.layout.service.LayoutAclService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.Application;
@@ -38,6 +40,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static io.meeds.ide.service.WidgetService.IDE_WIDGET_CREATED_EVENT;
+import static io.meeds.ide.service.WidgetService.IDE_WIDGET_UPDATED_EVENT;
 import static io.meeds.ide.service.WidgetService.NOT_ADMINISTRATOR_USER;
 
 @Service
@@ -48,6 +51,10 @@ public class StaticResourceService {
   public static final String             POSITION               = "position";
 
   public static final String             ENABLED                = "enabled";
+
+  public static final String             RESOURCE_NAME          = "resourceName";
+
+  public static final String             RESOURCE_NOT_FOUND     = "Static resource doesn't exist on the site";
 
   public static final String             CONTENT_ID             = "ide/WidgetPortlet";
 
@@ -79,6 +86,86 @@ public class StaticResourceService {
     Map<String, String> filters = new LinkedHashMap<>();
     filters.put(SITE_NAME, siteName);
     return widgetStorage.getWidgetsByProperties(filters);
+  }
+
+  /**
+   * Retrieves a CSS or JavaScript static resource of a site
+   *
+   * @param id the resource's id
+   * @param siteName the name of the site the resource is expected on
+   * @param username the user who reads
+   * @return the resource
+   * @throws IllegalAccessException when the user is not an administrator
+   * @throws ObjectNotFoundException when no CSS or JavaScript static resource
+   *           of that site has this id
+   */
+  public Widget getStaticResource(long id, String siteName, String username) throws IllegalAccessException,
+                                                                             ObjectNotFoundException {
+    if (!layoutAclService.isAdministrator(username)) {
+      throw new IllegalAccessException(NOT_ADMINISTRATOR_USER);
+    }
+    Widget widget = widgetStorage.getWidget(id);
+    if (widget == null
+        || (widget.getType() != WidgetType.CSS && widget.getType() != WidgetType.JS)
+        || widget.getProperties() == null
+        || StringUtils.isBlank(siteName)
+        || !StringUtils.equals(siteName, widget.getProperties().get(SITE_NAME))) {
+      throw new ObjectNotFoundException(RESOURCE_NOT_FOUND);
+    }
+    return widget;
+  }
+
+  /**
+   * Updates a CSS or JavaScript static resource of a site: each given value
+   * replaces the stored one, a null one keeps it
+   *
+   * @param id the resource's id
+   * @param siteName the name of the site the resource is expected on
+   * @param name the resource's name, null to keep the stored one
+   * @param content the CSS or JavaScript, null to keep the stored one
+   * @param position where the resource is rendered, null to keep the stored
+   *          one
+   * @param enabled whether the resource is rendered, null to keep the stored
+   *          value
+   * @param username the user who writes
+   * @return the updated resource
+   * @throws IllegalAccessException when the user is not an administrator
+   * @throws ObjectNotFoundException when no CSS or JavaScript static resource
+   *           of that site has this id
+   */
+  public Widget updateStaticResource(long id, // NOSONAR
+                                     String siteName,
+                                     String name,
+                                     String content,
+                                     String position,
+                                     Boolean enabled,
+                                     String username) throws IllegalAccessException, ObjectNotFoundException {
+    Widget existingWidget = getStaticResource(id, siteName, username);
+    Map<String, String> properties = new LinkedHashMap<>(existingWidget.getProperties());
+    if (name != null) {
+      properties.put(RESOURCE_NAME, name);
+    }
+    if (position != null) {
+      properties.put(POSITION, position);
+    }
+    if (enabled != null) {
+      properties.put(ENABLED, String.valueOf(enabled.booleanValue()));
+    }
+    Identity identity = identityManager.getOrCreateUserIdentity(username);
+    Widget widget = new Widget(existingWidget.getId(),
+                               existingWidget.getPortletId(),
+                               existingWidget.getHtml(),
+                               content != null && existingWidget.getType() == WidgetType.CSS ? content : existingWidget.getCss(),
+                               content != null && existingWidget.getType() == WidgetType.JS ? content : existingWidget.getJs(),
+                               existingWidget.getCreatorId(),
+                               Long.parseLong(identity.getId()),
+                               LocalDateTime.now(),
+                               existingWidget.getCreatedDate(),
+                               existingWidget.getType(),
+                               properties);
+    Widget updatedWidget = widgetStorage.updateWidget(widget);
+    listenerService.broadcast(IDE_WIDGET_UPDATED_EVENT, null, updatedWidget);
+    return updatedWidget;
   }
 
   public List<Application> getStaticResourceApplications(String siteName, String applicationPosition) {

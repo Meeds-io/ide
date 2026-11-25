@@ -41,8 +41,8 @@ import io.meeds.layout.service.LayoutAclService;
 import io.meeds.mcp.server.plugin.McpToolPlugin;
 
 /**
- * The MCP tool that writes an IDE widget's code on the user's draft, the one
- * tool of this add-on: argument mapping and exception translation only, the
+ * The MCP tool that writes an IDE widget's code on the user's draft:
+ * argument mapping and exception translation only, the
  * copy-on-write rule being {@link WidgetService}'s. Every refusal is a fixed
  * text naming the object or the option it concerns; no engine message
  * reaches the wire.
