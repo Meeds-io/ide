@@ -21,11 +21,14 @@ package io.meeds.ide.service;
 import static io.meeds.ide.service.StaticResourceService.ENABLED;
 import static io.meeds.ide.service.StaticResourceService.POSITION;
 import static io.meeds.ide.service.WidgetService.IDE_WIDGET_CREATED_EVENT;
+import static io.meeds.ide.service.WidgetService.IDE_WIDGET_UPDATED_EVENT;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.*;
 
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.Application;
@@ -43,10 +46,12 @@ import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
 
+import io.meeds.ide.constant.WidgetType;
 import io.meeds.ide.model.Widget;
 import io.meeds.ide.storage.WidgetStorage;
 import io.meeds.layout.service.LayoutAclService;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @SpringBootTest(classes = { StaticResourceService.class, })
@@ -130,5 +135,130 @@ class StaticResourceServiceTest {
     assertEquals(1, apps.size());
 
     assertEquals("ide/WidgetPortlet", ((TransientApplicationState) apps.getFirst().getState()).getContentId());
+  }
+
+  @Test
+  void getStaticResourceIsForAnAdministratorOnly() {
+    when(widgetStorage.getWidget(8L)).thenReturn(resource(8L, WidgetType.CSS, "a{}", "siteName"));
+    assertEquals(WidgetService.NOT_ADMINISTRATOR_USER,
+                 assertThrows(IllegalAccessException.class,
+                              () -> staticResourceService.getStaticResource(8L, "siteName", USERNAME)).getMessage());
+    verify(widgetStorage, never()).getWidget(8L);
+  }
+
+  @Test
+  void getStaticResourceAnswersACssOrJsResourceOfTheNamedSiteOnly() throws Exception {
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    Widget css = resource(8L, WidgetType.CSS, "a{}", "siteName");
+    Widget js = resource(9L, WidgetType.JS, "x()", "siteName");
+    Widget app = resource(10L, WidgetType.APP, null, "siteName");
+    Widget widgetOfAPage = resource(11L, WidgetType.CSS, "a{}", null);
+    widgetOfAPage.setProperties(null);
+    when(widgetStorage.getWidget(8L)).thenReturn(css);
+    when(widgetStorage.getWidget(9L)).thenReturn(js);
+    when(widgetStorage.getWidget(10L)).thenReturn(app);
+    when(widgetStorage.getWidget(11L)).thenReturn(widgetOfAPage);
+
+    assertSame(css, staticResourceService.getStaticResource(8L, "siteName", USERNAME));
+    assertSame(js, staticResourceService.getStaticResource(9L, "siteName", USERNAME));
+    for (long id : new long[] { 10L, 11L, 12L }) {
+      assertEquals(StaticResourceService.RESOURCE_NOT_FOUND,
+                   assertThrows(ObjectNotFoundException.class,
+                                () -> staticResourceService.getStaticResource(id, "siteName", USERNAME)).getMessage());
+    }
+    assertThrows(ObjectNotFoundException.class, () -> staticResourceService.getStaticResource(8L, "otherSite", USERNAME));
+    assertThrows(ObjectNotFoundException.class, () -> staticResourceService.getStaticResource(8L, null, USERNAME));
+    widgetOfAPage.setProperties(new LinkedHashMap<>());
+    assertThrows(ObjectNotFoundException.class, () -> staticResourceService.getStaticResource(11L, null, USERNAME));
+    assertThrows(ObjectNotFoundException.class, () -> staticResourceService.getStaticResource(11L, "", USERNAME));
+  }
+
+  @Test
+  void updateStaticResourceIsForAnAdministratorOnly() {
+    when(widgetStorage.getWidget(8L)).thenReturn(resource(8L, WidgetType.CSS, "a{}", "siteName"));
+    assertThrows(IllegalAccessException.class,
+                 () -> staticResourceService.updateStaticResource(8L, "siteName", "n", "b{}", "END_OF_HEAD", false, USERNAME));
+    verify(widgetStorage, never()).updateWidget(any());
+    verifyNoInteractions(listenerService);
+  }
+
+  @Test
+  void updateStaticResourceOfAnotherSiteWritesNothing() {
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(widgetStorage.getWidget(8L)).thenReturn(resource(8L, WidgetType.CSS, "a{}", "siteName"));
+    assertThrows(ObjectNotFoundException.class,
+                 () -> staticResourceService.updateStaticResource(8L, "otherSite", "n", "b{}", "END_OF_HEAD", false, USERNAME));
+    verify(widgetStorage, never()).updateWidget(any());
+    verifyNoInteractions(listenerService);
+  }
+
+  @Test
+  void updateStaticResourceReplacesWhatIsGivenAndKeepsTheRest() throws Exception {
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("5");
+    Widget stored = resource(8L, WidgetType.CSS, "a{}", "siteName");
+    stored.setCreatorId(2L);
+    stored.setModifierId(2L);
+    stored.setCreatedDate(LocalDateTime.of(2026, 1, 1, 0, 0));
+    stored.setModifiedDate(LocalDateTime.of(2026, 1, 1, 0, 0));
+    when(widgetStorage.getWidget(8L)).thenReturn(stored);
+    when(widgetStorage.updateWidget(any())).thenAnswer(i -> i.getArgument(0));
+
+    Widget updated = staticResourceService.updateStaticResource(8L, "siteName", null, "b{}", null, null, USERNAME);
+
+    assertNotSame(stored, updated);
+    assertEquals(8L, updated.getId());
+    assertEquals(WidgetType.CSS, updated.getType());
+    assertEquals("b{}", updated.getCss());
+    assertNull(updated.getJs());
+    assertEquals(Map.of("siteName", "siteName", "resourceName", "brand", "position", "START_OF_HEAD", "enabled", "true"),
+                 updated.getProperties());
+    assertEquals(2L, updated.getCreatorId());
+    assertEquals(5L, updated.getModifierId());
+    assertEquals(LocalDateTime.of(2026, 1, 1, 0, 0), updated.getCreatedDate());
+    assertTrue(updated.getModifiedDate().isAfter(LocalDateTime.of(2026, 1, 1, 0, 0)));
+    assertEquals("a{}", stored.getCss());
+    verify(listenerService).broadcast(IDE_WIDGET_UPDATED_EVENT, null, updated);
+
+    Widget renamed = staticResourceService.updateStaticResource(8L, "siteName", "main", null, "", false, USERNAME);
+    assertEquals("a{}", renamed.getCss());
+    assertEquals(Map.of("siteName", "siteName", "resourceName", "main", "position", "", "enabled", "false"),
+                 renamed.getProperties());
+    assertEquals(Map.of("siteName", "siteName", "resourceName", "brand", "position", "START_OF_HEAD", "enabled", "true"),
+                 stored.getProperties());
+  }
+
+  @Test
+  void updateStaticResourceWritesTheContentOfAJsResourceInItsJs() throws Exception {
+    when(layoutAclService.isAdministrator(USERNAME)).thenReturn(true);
+    when(identityManager.getOrCreateUserIdentity(USERNAME)).thenReturn(identity);
+    when(identity.getId()).thenReturn("5");
+    when(widgetStorage.getWidget(9L)).thenReturn(resource(9L, WidgetType.JS, "x()", "siteName"));
+    when(widgetStorage.updateWidget(any())).thenAnswer(i -> i.getArgument(0));
+
+    Widget updated = staticResourceService.updateStaticResource(9L, "siteName", null, "y()", null, true, USERNAME);
+
+    assertEquals("y()", updated.getJs());
+    assertNull(updated.getCss());
+    assertEquals("true", updated.getProperties().get(ENABLED));
+  }
+
+  private Widget resource(long id, WidgetType type, String content, String siteName) {
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("siteName", siteName);
+    properties.put("resourceName", "brand");
+    properties.put("position", "START_OF_HEAD");
+    properties.put("enabled", "true");
+    Widget resource = new Widget();
+    resource.setId(id);
+    resource.setType(type);
+    if (type == WidgetType.CSS) {
+      resource.setCss(content);
+    } else if (type == WidgetType.JS) {
+      resource.setJs(content);
+    }
+    resource.setProperties(properties);
+    return resource;
   }
 }

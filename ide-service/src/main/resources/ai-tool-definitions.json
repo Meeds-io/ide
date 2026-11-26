@@ -42,6 +42,77 @@
         "idempotentHint": false,
         "openWorldHint": false
       }
+    },
+    {
+      "name": "get_site_static_resources",
+      "title": "Read the custom CSS and JavaScript of a site",
+      "description": "Read the custom CSS and JavaScript files of a site, the static resources Site Management lists for it: the styles and scripts added to every page of the site beyond what the theme and the styling tools cover. site_id is the id list_sites and get_site answer, of a portal site Site Management lists: a group site, a space's site or a space's public site is refused. Returns site_id and resources, each with its resource_id, its type (CSS or JS), its name, its content, its position (START_OF_HEAD, END_OF_HEAD, START_OF_BODY or END_OF_BODY, where it is added in the page; END_OF_BODY when none was chosen) and enabled (false: kept but not rendered). An empty resources list means the site has no custom CSS or JavaScript; it is not a refusal. Reserved to platform administrators, as in Site Management. Resources are attached to the site's name: the ones of the meta site (the platform's main site) are also rendered on the sites its navigation shows and on space sites. A refusal names the argument at fault and what to send instead: correct the call and try again.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "site_id": {
+            "type": "integer",
+            "description": "The id of a portal site, as list_sites and get_site answer it"
+          }
+        },
+        "required": [
+          "site_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_site_static_resource",
+      "title": "Write a custom CSS or JavaScript file of a site",
+      "description": "Create a custom CSS or JavaScript file on a site, or update one: the static resources Site Management lists, added to every page of the site, for styles and scripts the theme and the styling tools do not cover. site_id names a portal site Site Management lists: a group site, a space's site or a space's public site is refused. Without resource_id a resource is created: type (CSS or JS), name and content are required, position defaults to END_OF_BODY and enabled to true. With resource_id, as get_site_static_resources answered it for this site, that resource is updated: each of name, content, position and enabled replaces the stored value, one omitted is kept, at least one is given, and type cannot change. content replaces the whole file, so read it first and send it back complete; it is limited to the configured size (1 MB by default). position is START_OF_HEAD, END_OF_HEAD, START_OF_BODY or END_OF_BODY. To stop rendering a resource without losing it, send enabled false; deleting one is done in Site Management. The change is not part of a draft: it is live on the site at once, for every visitor, and publish_layout and discard_layout_draft do not apply to it. Reserved to platform administrators, as in Site Management, because the code runs in every visitor's browser. Resources are attached to the site's name: the ones of the meta site (the platform's main site) are also rendered on the sites its navigation shows and on space sites. Returns the resource as saved: resource_id, type, name, content, position and enabled. A refusal names the argument at fault and what to send instead: correct the call and try again.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "site_id": {
+            "type": "integer",
+            "description": "The id of a portal site, as list_sites and get_site answer it"
+          },
+          "resource_id": {
+            "type": "integer",
+            "description": "The resource_id get_site_static_resources answered for this site, to update that resource; omit to create one"
+          },
+          "type": {
+            "type": "string",
+            "description": "CSS or JS; required to create a resource; on an update omit it, a resource's type cannot change"
+          },
+          "name": {
+            "type": "string",
+            "description": "The resource's name as Site Management lists it, at most 255 characters; required to create a resource; omit to keep it on an update"
+          },
+          "content": {
+            "type": "string",
+            "description": "The whole CSS or JavaScript of the resource, replacing the current one, live for every visitor at once; required to create a resource; omit to keep it on an update"
+          },
+          "position": {
+            "type": "string",
+            "description": "Where the resource is added in the page: START_OF_HEAD, END_OF_HEAD, START_OF_BODY or END_OF_BODY; omit for END_OF_BODY on a creation and to keep it on an update"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the resource is rendered; omit for true on a creation and to keep it on an update"
+          }
+        },
+        "required": [
+          "site_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
     }
   ]
 }

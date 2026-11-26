@@ -42,10 +42,10 @@ public class WidgetMcpToolDefinitionsTest {
 
   @Test
   @SneakyThrows
-  public void theOneToolIsDeclaredForThePublicMethodOfTheTool() {
+  public void updateWidgetCodeIsDeclaredFirstForThePublicMethodOfTheTool() {
     JsonNode root = definitions();
     assertEquals(List.of("tools"), List.copyOf(root.propertyNames()));
-    assertEquals(1, root.get("tools").size());
+    assertEquals(3, root.get("tools").size());
     JsonNode tool = root.get("tools").get(0);
     assertEquals("update_widget_code", tool.get("name").asString());
     Method method = WidgetMcpTool.class.getMethod("updateWidgetCode",
